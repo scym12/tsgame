@@ -205,23 +205,43 @@ class Scene {
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-
 class scmButton extends Sprite {
     imgUp : HTMLImageElement;
     imgDown : HTMLImageElement;
     btnState = 0;
 
+    text : string = null;
+    width = 0;
+    height = 0;
+    font : string = "40pt 굴림체";
+    fontColor : string = "#ff0000";
+    btnUpColor : string = "#0000ff";
+    btnDownColor : string = "#5555ff";
+
     loadImage(name : String) {
-        //console.log("scmbutton loadimage");
         super.loadImage(name);
         this.imgUp = this.img;
     }
 
+    setText(text : string) {  this.text = text;  }
+    setSize(width , height) { this.width = width; this.height = height; }
+
 
     mouseDown(event: MouseEvent): void {  
-        if(this.img && event.x > this.getX() && event.x < (this.getX() + this.img.width) 
-            && event.y > this.getY() && event.y < (this.getY() + this.img.height)  )
+        let width = 0;
+        let height = 0;
+        if(this.text && this.text.length > 0) {
+            width = this.width; 
+            height = this.height;
+        }
+        else {
+            width = this.img && this.img.width || 0; 
+            height = this.img && this.img.height || 0;
+        }
+        
+
+        if(event.x > this.getX() && event.x < (this.getX() + width) 
+            && event.y > this.getY() && event.y < (this.getY() + height)  )
                 this.btnState = 1;
         if(this.imgDown && this.btnState == 1) 
             this.img = this.imgDown;
@@ -229,16 +249,25 @@ class scmButton extends Sprite {
     }
 
     mouseUp(event: MouseEvent): void { 
-        if(this.img && event.x > this.getX() && event.x < (this.getX() + this.img.width) 
-            && event.y > this.getY() && event.y < (this.getY() + this.img.height)  )
+        let width = 0;
+        let height = 0;
+        if(this.text && this.text.length > 0) {
+            width = this.width; 
+            height = this.height;
+        }
+        else {
+            width = this.img && this.img.width || 0; 
+            height = this.img && this.img.height || 0;
+        }
+
+        if(event.x > this.getX() && event.x < (this.getX() + width) 
+            && event.y > this.getY() && event.y < (this.getY() + height)  )
             {
                 this.OnClick();
             }
-
-        if(this.imgUp && this.btnState == 1) {
-            this.btnState = 0;
-            this.img = this.imgUp;
-        }
+        
+        if(this.btnState == 1) this.btnState = 0;
+        if(this.imgUp && this.btnState == 0) this.img = this.imgUp;
     }    
 
     setImageD(img : String) {
@@ -247,14 +276,43 @@ class scmButton extends Sprite {
         this.imgDown.src = img.toString();               
     }
 
+    OnUpdate(ctx :CanvasRenderingContext2D,tm) : void {
+        if(this.text && this.text.length > 0)
+        {
+            let font = ctx.font;
+            let fStyle = ctx.fillStyle;
+
+            let dx=0; let dy=0;
+            if(this.btnState == 1) 
+            {
+                dx = 3; dy = 3;
+            }
+            //console.log("text is" + this.text);
+            ctx.fillStyle = (this.btnState == 0 ) ? this.btnUpColor : this.btnDownColor;
+            ctx.fillRect(this.getX() + dx, this.getY() + dy, this.width, this.height);
+
+            let x = this.width / 2;
+            let y = this.height / 2 ;
+            
+
+            ctx.font = this.font;
+            ctx.fillStyle = this.fontColor;
+            ctx.fillText(this.text, this.getX() + x + dx,this.getY() + y + 20 + dy,this.width);
+            ctx.textAlign = "center";
+
+            ctx.font = font;
+            ctx.fillStyle = fStyle;            
+        }
+        else
+            super.OnUpdate(ctx,tm);
+    }    
+
     OnClick() {
         console.log("Good");
     }
 }
 
 /////////////////////////////////////////////////////////////////////////////
-
-
 
 
 class exSprite extends Sprite {
@@ -274,15 +332,12 @@ class exSprite extends Sprite {
         this.idleArrow = 1;
         this.idle = new Array(arr.length);
         for(let i = 0; i< arr.length; i++) {
-            //console.log("arr " + i + " : " + arr[i]);
             this.idle[i] = new Image();
             this.idle[i].onload = function() { }
             this.idle[i].src = arr[i].toString();            
         }
-        //console.log(this.idle);
         this.idleIndex = 0;
     }
-
 
     private IdleProcess(tm) {
         if((this.idleIndex+1) >= this.idle.length) { this.idleArrow = -1; }
@@ -297,19 +352,30 @@ class exSprite extends Sprite {
         }
     }
 
-
+    ///////////////////////////// walk ///////////////////////////////////////////
+    walk : HTMLImageElement [];
+    walkIndex = 0;
 
     private WalkProcess(tm) {
 
     }
 
+    ///////////////////////////// run  ///////////////////////////////////////////
+    run : HTMLImageElement [];
+    runIndex = 0;
     private RunProcess(tm) {
 
     }
 
+
+    ///////////////////////////// attack ///////////////////////////////////////////
+    attack : HTMLImageElement [];
+    attackIndex = 0;
+
     private AttackProcess(tm) {
 
     }
+
 
     OnUpdate(ctx :CanvasRenderingContext2D,tm) : void {
         // IDLE
@@ -342,33 +408,47 @@ window.onload = () => {
 };
 
 
-function Init() {
+function gameInit() {
     var scene = new Scene();
     stage.AddScene(scene);
 
+/*
     let sprite = new exSprite();
     sprite.loadImage("./images/ship.png");
     scene.AddSprite(sprite);
     sprite.setLocation(50,50);
-
     var arr = new Array(10);
     for(let i=0;i<9;i++)
         arr[i] = "./images/BlueKnight_entity_000_Idle_00"+(i+1)+".png";
     arr[9]= "./images/BlueKnight_entity_000_Idle_010.png"; 
-
     sprite.setIdle(arr);
-
+*/
 
     let btn = new scmButton();
+//    btn.setText("한글 가나다라 테스트1234");
     btn.loadImage("./images/btnN.png");
     btn.setImageD("./images/btnD.png");
     scene.AddSprite(btn);
     btn.setLocation(250,50);
 
+    let btn2 = new scmButton();
+//    btn.setText("한글 가나다라 테스트1234");
+    btn2.setText("Idle");
+    btn2.setSize(200, 50);
+    scene.AddSprite(btn2);
+    btn2.setLocation(250,110);
+
+    let btn3 = new scmButton();
+//    btn.setText("한글 가나다라 테스트1234");
+    btn3.setText("Walk");
+    btn3.setSize(200, 50);
+    scene.AddSprite(btn3);
+    btn3.setLocation(250,170);
+
 }
 
 
-Init();
+gameInit();
 
 // 아래는 질문이 완료되면 지울것 
 //////////////////////////////////////////////////////////////////
@@ -422,3 +502,9 @@ num3 = num3 + 1;
 console.log(num3);
 */
 /////////////////////////////////////////////////////////////////
+
+/*
+    a : string;
+    b : String;
+    a , b 의 차이는?
+*/

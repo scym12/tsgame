@@ -168,34 +168,87 @@ var scmButton = (function (_super) {
     function scmButton() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.btnState = 0;
+        _this.text = null;
+        _this.width = 0;
+        _this.height = 0;
+        _this.font = "40pt 굴림체";
+        _this.fontColor = "#ff0000";
+        _this.btnUpColor = "#0000ff";
+        _this.btnDownColor = "#5555ff";
         return _this;
     }
     scmButton.prototype.loadImage = function (name) {
-        //console.log("scmbutton loadimage");
         _super.prototype.loadImage.call(this, name);
         this.imgUp = this.img;
     };
+    scmButton.prototype.setText = function (text) { this.text = text; };
+    scmButton.prototype.setSize = function (width, height) { this.width = width; this.height = height; };
     scmButton.prototype.mouseDown = function (event) {
-        if (this.img && event.x > this.getX() && event.x < (this.getX() + this.img.width)
-            && event.y > this.getY() && event.y < (this.getY() + this.img.height))
+        var width = 0;
+        var height = 0;
+        if (this.text && this.text.length > 0) {
+            width = this.width;
+            height = this.height;
+        }
+        else {
+            width = this.img && this.img.width || 0;
+            height = this.img && this.img.height || 0;
+        }
+        if (event.x > this.getX() && event.x < (this.getX() + width)
+            && event.y > this.getY() && event.y < (this.getY() + height))
             this.btnState = 1;
         if (this.imgDown && this.btnState == 1)
             this.img = this.imgDown;
     };
     scmButton.prototype.mouseUp = function (event) {
-        if (this.img && event.x > this.getX() && event.x < (this.getX() + this.img.width)
-            && event.y > this.getY() && event.y < (this.getY() + this.img.height)) {
+        var width = 0;
+        var height = 0;
+        if (this.text && this.text.length > 0) {
+            width = this.width;
+            height = this.height;
+        }
+        else {
+            width = this.img && this.img.width || 0;
+            height = this.img && this.img.height || 0;
+        }
+        if (event.x > this.getX() && event.x < (this.getX() + width)
+            && event.y > this.getY() && event.y < (this.getY() + height)) {
             this.OnClick();
         }
-        if (this.imgUp && this.btnState == 1) {
+        if (this.btnState == 1)
             this.btnState = 0;
+        if (this.imgUp && this.btnState == 0)
             this.img = this.imgUp;
-        }
     };
     scmButton.prototype.setImageD = function (img) {
         this.imgDown = new Image();
         this.imgDown.onload = function () { };
         this.imgDown.src = img.toString();
+    };
+    scmButton.prototype.OnUpdate = function (ctx, tm) {
+        if (this.text && this.text.length > 0) {
+            var font = ctx.font;
+            var fStyle = ctx.fillStyle;
+            var dx = 0;
+            var dy = 0;
+            if (this.btnState == 1) {
+                dx = 3;
+                dy = 3;
+            }
+            //console.log("text is" + this.text);
+            ctx.fillStyle = (this.btnState == 0) ? this.btnUpColor : this.btnDownColor;
+            ctx.fillRect(this.getX() + dx, this.getY() + dy, this.width, this.height);
+            var x = this.width / 2;
+            var y = this.height / 2;
+            ctx.font = this.font;
+            ctx.fillStyle = this.fontColor;
+            ctx.fillText(this.text, this.getX() + x + dx, this.getY() + y + 20 + dy, this.width);
+            ctx.textAlign = "center";
+            ctx.font = font;
+            ctx.fillStyle = fStyle;
+        }
+        else
+            _super.prototype.OnUpdate.call(this, ctx, tm);
     };
     scmButton.prototype.OnClick = function () {
         console.log("Good");
@@ -211,6 +264,9 @@ var exSprite = (function (_super) {
         _this.state = 0; // Idle, walk, run, attack 
         _this.idleIndex = 0;
         _this.idleArrow = 1;
+        _this.walkIndex = 0;
+        _this.runIndex = 0;
+        _this.attackIndex = 0;
         return _this;
     }
     exSprite.prototype.setSpeed = function (sp) { this.speed = sp; };
@@ -219,12 +275,10 @@ var exSprite = (function (_super) {
         this.idleArrow = 1;
         this.idle = new Array(arr.length);
         for (var i = 0; i < arr.length; i++) {
-            //console.log("arr " + i + " : " + arr[i]);
             this.idle[i] = new Image();
             this.idle[i].onload = function () { };
             this.idle[i].src = arr[i].toString();
         }
-        //console.log(this.idle);
         this.idleIndex = 0;
     };
     exSprite.prototype.IdleProcess = function (tm) {
@@ -266,25 +320,40 @@ window.onload = function () {
     canvas.addEventListener("mousedown", function (event) { stage.mouseDown(event); }, false);
     canvas.addEventListener("mouseup", function (event) { stage.mouseUp(event); }, false);
 };
-function Init() {
+function gameInit() {
     var scene = new Scene();
     stage.AddScene(scene);
-    var sprite = new exSprite();
-    sprite.loadImage("./images/ship.png");
-    scene.AddSprite(sprite);
-    sprite.setLocation(50, 50);
-    var arr = new Array(10);
-    for (var i = 0; i < 9; i++)
-        arr[i] = "./images/BlueKnight_entity_000_Idle_00" + (i + 1) + ".png";
-    arr[9] = "./images/BlueKnight_entity_000_Idle_010.png";
-    sprite.setIdle(arr);
+    /*
+        let sprite = new exSprite();
+        sprite.loadImage("./images/ship.png");
+        scene.AddSprite(sprite);
+        sprite.setLocation(50,50);
+        var arr = new Array(10);
+        for(let i=0;i<9;i++)
+            arr[i] = "./images/BlueKnight_entity_000_Idle_00"+(i+1)+".png";
+        arr[9]= "./images/BlueKnight_entity_000_Idle_010.png";
+        sprite.setIdle(arr);
+    */
     var btn = new scmButton();
+    //    btn.setText("한글 가나다라 테스트1234");
     btn.loadImage("./images/btnN.png");
     btn.setImageD("./images/btnD.png");
     scene.AddSprite(btn);
     btn.setLocation(250, 50);
+    var btn2 = new scmButton();
+    //    btn.setText("한글 가나다라 테스트1234");
+    btn2.setText("Idle");
+    btn2.setSize(200, 50);
+    scene.AddSprite(btn2);
+    btn2.setLocation(250, 110);
+    var btn3 = new scmButton();
+    //    btn.setText("한글 가나다라 테스트1234");
+    btn3.setText("Walk");
+    btn3.setSize(200, 50);
+    scene.AddSprite(btn3);
+    btn3.setLocation(250, 170);
 }
-Init();
+gameInit();
 // 아래는 질문이 완료되면 지울것 
 //////////////////////////////////////////////////////////////////
 /*
@@ -332,3 +401,8 @@ num3 = num3 + 1;
 console.log(num3);
 */
 /////////////////////////////////////////////////////////////////
+/*
+    a : string;
+    b : String;
+    a , b 의 차이는?
+*/ 
