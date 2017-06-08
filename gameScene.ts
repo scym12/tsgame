@@ -328,139 +328,13 @@ class exSprite extends Sprite {
 
 }
 
-var canvas: HTMLCanvasElement;
-var ctx: CanvasRenderingContext2D;
-var img: HTMLImageElement;
-var x: number = 50;
-var y: number = 50;
-
-
-// 게임루프 
-function gameLoop(): void {
-    requestAnimationFrame(gameLoop);	// 해당 함수가 다시 호출됨.
-    keyInput.inputLoop();
-
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, 1280, 720);
-
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.drawImage(img, 0, 0, img.width, img.height);
-    ctx.restore();
-}
-
-
-// Keyboard처리 클래스 
-class cKeyboardInput {
-    public keyCallback: { [keycode: number]: () => void; } = {};
-    public keyDown: { [keycode: number]: boolean; } = {};
-    constructor() {
-        document.addEventListener('keydown', this.keyboardDown);
-        document.addEventListener('keyup', this.keyboardUp);
-    }
-
-    public addKeycodeCallback = (keycode: number, f: () => void): void => {
-        this.keyCallback[keycode] = f;
-        this.keyDown[keycode] = false;
-    }
-
-    public keyboardDown = (event: KeyboardEvent): void => {
-        if (this.keyCallback[event.keyCode] != null) {
-            event.preventDefault();
-        }
-        this.keyDown[event.keyCode] = true;
-    }
-
-    public keyboardUp = (event: KeyboardEvent): void => {
-        this.keyDown[event.keyCode] = false;
-    }
-
-    public inputLoop = (): void => {
-        for (var key in this.keyDown) {
-            var is_down: boolean = this.keyDown[key];
-
-            if (is_down) {
-                var callback: () => void = this.keyCallback[key];
-                if (callback != null) {
-                    callback();
-                }
-            }
-        }
-    }
-}
-
-function shipUp(): void {
-    y -= 2;
-}
-
-function shipDown(): void {
-    y += 2;
-}
-
-function shipLeft(): void {
-    x -= 2;
-}
-
-function shipRight(): void {
-    x += 2;
-}
-
-var keyInput: cKeyboardInput;
-
-
-var sp : Sprite  = new Sprite();
-//console.log(sp);
-
-
 
 var stage: Stage = new Stage(); 
-
-/*
-function mouseDown(event: MouseEvent): void {
-   var x: number = event.x;
-   var y: number = event.y;
-
-   console.log("down : " + x + ":" + y);
-}
-
-function mouseUp(event: MouseEvent): void {
-   var x: number = event.x;
-   var y: number = event.y;
-
-   console.log("Up : " +  x + ":" + y);
-}
-*/
-
-
 window.onload = () => {
-    // img = <HTMLImageElement>document.getElementById('spaceship');
+    var canvas: HTMLCanvasElement;
     canvas = <HTMLCanvasElement>document.getElementById('cnvs');
-/*
-    ctx = canvas.getContext("2d");
-    keyInput = new cKeyboardInput();
-    
-    // PRESS LEFT ARROW OR 'A' KEY
-    keyInput.addKeycodeCallback(37, shipLeft);
-    keyInput.addKeycodeCallback(65, shipLeft);
-
-    // PRESS UP ARROW OR 'W' KEY
-    keyInput.addKeycodeCallback(38, shipUp);
-    keyInput.addKeycodeCallback(87, shipUp);
-
-    // PRESS RIGHT ARROW OR 'D' KEY
-    keyInput.addKeycodeCallback(39, shipRight);
-    keyInput.addKeycodeCallback(68, shipRight);
-
-    // PRESS DOWN ARROW OR 'S' KEY
-    keyInput.addKeycodeCallback(40, shipDown);
-    keyInput.addKeycodeCallback(83, shipDown);
-
-    gameLoop();
-*/
     stage.setCanvas(canvas);
     stage.OnUpdate(0);
-
-
 
     canvas.addEventListener("mousedown", function(event: MouseEvent) { stage.mouseDown(event); }, false);
     canvas.addEventListener("mouseup", function(event: MouseEvent) { stage.mouseUp(event); }, false);
@@ -468,7 +342,7 @@ window.onload = () => {
 };
 
 
-{
+function Init() {
     var scene = new Scene();
     stage.AddScene(scene);
 
@@ -494,13 +368,9 @@ window.onload = () => {
 }
 
 
-//var pt = new Point();
-//var pt2 = new Point(1,2);
+Init();
 
-
-
-//console.log(pt.nx, pt2.nx);
-
+// 아래는 질문이 완료되면 지울것 
 //////////////////////////////////////////////////////////////////
 /*
 let : for() 문을 벗어나면 사라지는 변수
