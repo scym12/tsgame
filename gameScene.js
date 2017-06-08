@@ -23,9 +23,10 @@ var Point = (function () {
 var SNode = (function () {
     function SNode() {
         this.loc = new Point();
+        this.pivot = new Point();
     }
-    SNode.prototype.getX = function () { return this.loc.nx; };
-    SNode.prototype.getY = function () { return this.loc.ny; };
+    SNode.prototype.getX = function () { return this.loc.nx + this.pivot.nx; };
+    SNode.prototype.getY = function () { return this.loc.ny + this.pivot.ny; };
     SNode.prototype.setNumber = function (num) {
         this.unique = num;
     };
@@ -168,6 +169,7 @@ var scmButton = (function (_super) {
     function scmButton() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.btnState = 0;
+        _this.callBackFunc = null;
         _this.text = null;
         _this.width = 0;
         _this.height = 0;
@@ -251,7 +253,9 @@ var scmButton = (function (_super) {
             _super.prototype.OnUpdate.call(this, ctx, tm);
     };
     scmButton.prototype.OnClick = function () {
-        console.log("Good");
+        if (this.callBackFunc != null)
+            this.callBackFunc();
+        //console.log("Good" + this.unique);
     };
     return scmButton;
 }(Sprite));
@@ -261,32 +265,53 @@ var exSprite = (function (_super) {
     function exSprite() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
         _this.speed = 80;
-        _this.state = 0; // Idle, walk, run, attack 
+        _this.state = 0; // Idle, walk, attack , run
         _this.idleIndex = 0;
         _this.idleArrow = 1;
+        _this.idlePivot = new Point();
         _this.walkIndex = 0;
+        _this.walkPivot = new Point();
         _this.runIndex = 0;
         _this.attackIndex = 0;
+        _this.attackPivot = new Point();
         return _this;
     }
     exSprite.prototype.setSpeed = function (sp) { this.speed = sp; };
-    exSprite.prototype.setIdle = function (arr) {
+    exSprite.prototype.setAnimationImageArray = function (arr, state) {
+        var imgArray;
         this.tm = 0;
-        this.idleArrow = 1;
-        this.idle = new Array(arr.length);
-        for (var i = 0; i < arr.length; i++) {
-            this.idle[i] = new Image();
-            this.idle[i].onload = function () { };
-            this.idle[i].src = arr[i].toString();
+        imgArray = new Array(arr.length);
+        if (state == 0) {
+            this.idleArrow = 1;
+            this.idle = imgArray;
+            this.idleIndex = 0;
         }
-        this.idleIndex = 0;
+        else if (state == 1) {
+            this.walk = imgArray;
+            this.walkIndex = 0;
+        }
+        else if (state == 2) {
+            this.attack = imgArray;
+            this.attackIndex = 0;
+        }
+        for (var i = 0; i < imgArray.length; i++) {
+            imgArray[i] = new Image();
+            imgArray[i].onload = function () { };
+            imgArray[i].src = arr[i].toString();
+        }
     };
+    exSprite.prototype.setIdlePivot = function (x, y) { this.idlePivot.nx = x; this.idlePivot.ny = y; };
     exSprite.prototype.IdleProcess = function (tm) {
         if ((this.idleIndex + 1) >= this.idle.length) {
-            this.idleArrow = -1;
+            this.idleIndex = 0;
         }
-        if (this.idleIndex <= 0)
-            this.idleArrow = 1;
+        /*
+        if((this.idleIndex+1) >= this.idle.length) { this.idleArrow = -1; }
+        if(this.idleIndex <= 0) this.idleArrow = 1;
+        */
+        // console.log("idle : " + this.idleIndex);
+        this.pivot.nx = this.idlePivot.nx;
+        this.pivot.ny = this.idlePivot.ny;
         this.img = this.idle[this.idleIndex];
         var diff = tm - this.tm;
         if (diff > this.speed) {
@@ -294,15 +319,44 @@ var exSprite = (function (_super) {
             this.idleIndex = this.idleIndex + this.idleArrow;
         }
     };
+    exSprite.prototype.setWalkPivot = function (x, y) { this.walkPivot.nx = x; this.walkPivot.ny = y; };
     exSprite.prototype.WalkProcess = function (tm) {
+        if ((this.walkIndex + 1) >= this.walk.length) {
+            this.walkIndex = 0;
+        }
+        this.pivot.nx = this.walkPivot.nx;
+        this.pivot.ny = this.walkPivot.ny;
+        this.img = this.walk[this.walkIndex];
+        var diff = tm - this.tm;
+        if (diff > this.speed) {
+            this.tm = tm;
+            this.walkIndex = this.walkIndex + 1;
+        }
     };
     exSprite.prototype.RunProcess = function (tm) {
     };
+    exSprite.prototype.setAttackPivot = function (x, y) { this.attackPivot.nx = x; this.attackPivot.ny = y; };
     exSprite.prototype.AttackProcess = function (tm) {
+        if ((this.attackIndex + 1) >= this.attack.length) {
+            this.attackIndex = 0;
+            this.state = 0;
+        }
+        this.pivot.nx = this.attackPivot.nx;
+        this.pivot.ny = this.attackPivot.ny;
+        this.img = this.attack[this.attackIndex];
+        var diff = tm - this.tm;
+        if (diff > this.speed) {
+            this.tm = tm;
+            this.attackIndex = this.attackIndex + 1;
+        }
     };
     exSprite.prototype.OnUpdate = function (ctx, tm) {
-        // IDLE
-        this.IdleProcess(tm);
+        if (this.state == 0)
+            this.IdleProcess(tm);
+        else if (this.state == 1)
+            this.WalkProcess(tm);
+        else if (this.state == 2)
+            this.AttackProcess(tm);
         _super.prototype.OnUpdate.call(this, ctx, tm);
     };
     exSprite.prototype.mouseDown = function (event) {
@@ -311,7 +365,28 @@ var exSprite = (function (_super) {
     };
     return exSprite;
 }(Sprite));
+var GameManager = (function () {
+    function GameManager() {
+    }
+    GameManager.prototype.setCharState = function (state) {
+        this.mChar.state = state;
+    };
+    GameManager.prototype.charIdle = function () {
+        this.mChar.state = 0;
+        //this.setCharState(0);
+    };
+    GameManager.prototype.charWalk = function () {
+        this.mChar.state = 1;
+        //this.setCharState(1);
+    };
+    GameManager.prototype.charAttack = function () {
+        this.mChar.state = 2;
+        //this.setCharState(1);
+    };
+    return GameManager;
+}());
 var stage = new Stage();
+var manager = new GameManager();
 window.onload = function () {
     var canvas;
     canvas = document.getElementById('cnvs');
@@ -323,35 +398,57 @@ window.onload = function () {
 function gameInit() {
     var scene = new Scene();
     stage.AddScene(scene);
-    /*
-        let sprite = new exSprite();
-        sprite.loadImage("./images/ship.png");
-        scene.AddSprite(sprite);
-        sprite.setLocation(50,50);
-        var arr = new Array(10);
-        for(let i=0;i<9;i++)
-            arr[i] = "./images/BlueKnight_entity_000_Idle_00"+(i+1)+".png";
-        arr[9]= "./images/BlueKnight_entity_000_Idle_010.png";
-        sprite.setIdle(arr);
-    */
+    var sprite = new exSprite();
+    sprite.loadImage("./images/ship.png");
+    scene.AddSprite(sprite);
+    sprite.setLocation(50, 50);
+    var arr = new Array(11);
+    for (var i = 0; i < 10; i++)
+        arr[i] = "./images/BlueKnight_entity_000_Idle_00" + (i) + ".png";
+    arr[10] = "./images/BlueKnight_entity_000_Idle_010.png";
+    sprite.setAnimationImageArray(arr, 0);
+    sprite.state = 0;
+    sprite.setIdlePivot(79, 62);
+    var arrWalk = new Array(10);
+    for (var i = 0; i < 10; i++)
+        arrWalk[i] = "./images/BlueKnight_entity_000_walk_00" + (i) + ".png";
+    sprite.setAnimationImageArray(arrWalk, 1);
+    sprite.setWalkPivot(25, 60);
+    var arrAttack = new Array(10);
+    for (var i = 0; i < 10; i++)
+        arrAttack[i] = "./images/BlueKnight_entity_000_basic attack 1_00" + (i) + ".png";
+    sprite.setAnimationImageArray(arrAttack, 2);
+    sprite.setAttackPivot(0, 0);
+    manager.mChar = sprite;
     var btn = new scmButton();
     //    btn.setText("한글 가나다라 테스트1234");
     btn.loadImage("./images/btnN.png");
     btn.setImageD("./images/btnD.png");
     scene.AddSprite(btn);
-    btn.setLocation(250, 50);
+    btn.setLocation(500, 50);
     var btn2 = new scmButton();
     //    btn.setText("한글 가나다라 테스트1234");
     btn2.setText("Idle");
     btn2.setSize(200, 50);
     scene.AddSprite(btn2);
-    btn2.setLocation(250, 110);
+    btn2.setLocation(500, 110);
+    btn2.callBackFunc = function () { manager.charIdle(); };
     var btn3 = new scmButton();
     //    btn.setText("한글 가나다라 테스트1234");
     btn3.setText("Walk");
     btn3.setSize(200, 50);
     scene.AddSprite(btn3);
-    btn3.setLocation(250, 170);
+    btn3.setLocation(500, 170);
+    btn3.callBackFunc = function () { manager.charWalk(); };
+    {
+        var btn_1 = new scmButton();
+        //    btn.setText("한글 가나다라 테스트1234");
+        btn_1.setText("Attack");
+        btn_1.setSize(200, 50);
+        scene.AddSprite(btn_1);
+        btn_1.setLocation(500, 230);
+        btn_1.callBackFunc = function () { manager.charAttack(); };
+    }
 }
 gameInit();
 // 아래는 질문이 완료되면 지울것 
