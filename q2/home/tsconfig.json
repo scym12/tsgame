@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "allowJs": true,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "jsx": "react"
+  },
+  "files": [
+    "/test/helpers/convert-time.ts.d",
+    "/test/helpers/convert-time.js",
+    "index.ts"
+  ]
+}
