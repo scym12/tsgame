@@ -10,7 +10,7 @@ class scmAnimationStateListener implements spine.AnimationStateListener2
 	interrupt(entry: spine.TrackEntry) { }
 	end(entry: spine.TrackEntry) { }
 	dispose(entry: spine.TrackEntry) { }
-	complete(entry: spine.TrackEntry) { }
+	complete(entry: spine.TrackEntry) { console.log("Complete"); }
 	event(entry: spine.TrackEntry, event: spine.Event) { }
 
 };
@@ -30,6 +30,7 @@ class scmSpine {
 	animName: string  = "walk";
 	skinName: string  = "default";
 */
+	// Attack Crouch Fall Headturn Idle Jump Run Walk 
 	skelName: string  = "hero-mesh";
 	animName: string  = "Idle";
 	skinName: string  = "default";
