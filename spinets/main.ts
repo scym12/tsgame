@@ -1,3 +1,6 @@
+﻿// Q4 : java script는 일단 웹에서 불러오면 다음에는 불러오지 않는데 강제로 갱신하는 방법이 없나?
+// Q5 : .d.ts 파일은 어떻게 만드는가? 어떻게 사용하는가?
+
 //import * as spine from "./build/spine-canvas.d.ts";
 //import { spine } from './build/spine-canvas.d.ts'
 //import * as spine from "./spine-canvas";
