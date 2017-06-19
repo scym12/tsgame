@@ -43,7 +43,8 @@ var scmSpine = (function () {
         this.state = null;
         this.skeletonRenderer = null;
         // Attack Crouch Fall Headturn Idle Jump Run Walk 
-        this.skelName = "hero-mesh";
+        //skelName: string  = "hero-mesh";
+        this.skelName = "hero";
         this.animName = "Idle";
         this.skinName = "default";
         this.eventListener = null;
@@ -56,11 +57,11 @@ var scmSpine = (function () {
         this.context = this.canvas.getContext("2d");
         this.skeletonRenderer = new spine.canvas.SkeletonRenderer(this.context);
         // enable debug rendering
-        this.skeletonRenderer.debugRendering = false;
+        //this.skeletonRenderer.debugRendering = false;
         // enable the triangle renderer, supports meshes, but may produce artifacts in some browsers
-        this.skeletonRenderer.triangleRendering = false;
+        //this.skeletonRenderer.triangleRendering = false;
         this.skeletonRenderer.debugRendering = false;
-        this.skeletonRenderer.triangleRendering = true;
+        this.skeletonRenderer.triangleRendering = false;
         this.assetManager = new spine.canvas.AssetManager();
         this.assetManager.loadText("assets/" + this.skelName + ".json");
         this.assetManager.loadText("assets/" + this.skelName + ".atlas");

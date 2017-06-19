@@ -31,7 +31,8 @@ export class scmSpine {
 	skeletonRenderer: spine.canvas.SkeletonRenderer = null;
 
 	// Attack Crouch Fall Headturn Idle Jump Run Walk 
-	skelName: string  = "hero-mesh";
+	//skelName: string  = "hero-mesh";
+	skelName: string  = "hero";
 	animName: string  = "Idle";
 	skinName: string  = "default";
 
@@ -47,12 +48,12 @@ export class scmSpine {
 
 		this.skeletonRenderer = new spine.canvas.SkeletonRenderer(this.context);
 		// enable debug rendering
-		this.skeletonRenderer.debugRendering = false;
+		//this.skeletonRenderer.debugRendering = false;
 		// enable the triangle renderer, supports meshes, but may produce artifacts in some browsers
-		this.skeletonRenderer.triangleRendering = false;
+		//this.skeletonRenderer.triangleRendering = false;
 
 		this.skeletonRenderer.debugRendering = false;
-		this.skeletonRenderer.triangleRendering = true;
+		this.skeletonRenderer.triangleRendering = false;
 
 		this.assetManager = new spine.canvas.AssetManager();
 
