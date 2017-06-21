@@ -26,6 +26,7 @@ export class scmSpine {
 	context: CanvasRenderingContext2D = null;
 	assetManager: spine.AssetManager = null;
 	skeleton: spine.Skeleton = null;
+    skeletonData:spine.SkeletonData = null;
 	state: spine.AnimationState = null;
 	bounds;
 	skeletonRenderer: spine.canvas.SkeletonRenderer = null;
@@ -41,7 +42,17 @@ export class scmSpine {
     animArr: { [keycode: string]: string; } = {};
     skinArr: { [keycode: string]: string; } = {};
 
+    private timeScale : number = 1;
+    traceEntry: spine.TrackEntry = null;    
+    setTimeScale(ts) { 
+        this.timeScale = ts; 
+        if(this.traceEntry != null)
+            this.traceEntry.timeScale = ts;
+    }
+
 	eventListener:scmAnimationStateListener = null;
+    LoadingCompleteCallBackFunc : () => void = null;
+    setLoadingCompleteCallBackFunc(callBackFunc : () => void) { this.LoadingCompleteCallBackFunc = callBackFunc; }
 
 	init (skelName:string) {
         this.skelName = skelName; 
@@ -73,6 +84,8 @@ export class scmSpine {
 
         this.animArr = {};
         this.skinArr = {};
+
+        //var traceEntry : spine.TrackEntry = null;
         
         console.log("scmSpine init");
 	}
@@ -94,7 +107,16 @@ export class scmSpine {
 			this.skeleton = data.skeleton;
 			this.state = data.state;
 			this.bounds = data.bounds;
+            this.skeletonData = data.skeletonData;
+            if(this.LoadingCompleteCallBackFunc != null)
+                this.LoadingCompleteCallBackFunc();
 			//requestAnimationFrame( function() { me.render(); } );
+
+            //this.bounds.skeleton.
+            //skeleton.setSkinByName("A");
+
+
+
 		} else {
 			//requestAnimationFrame( function() { me.load(); } );
 		}
@@ -145,18 +167,24 @@ export class scmSpine {
             initialAnimation = this.animArr[defaultAni];
         if(this.skinArr[skin] == null)
             skin = this.skinArr[defaultSkin];
-
 		skeleton.flipY = true;
 		var bounds = me.calculateBounds(skeleton);
-		skeleton.setSkinByName(skin);
 
-		// Create an AnimationState, and set the initial animation in looping mode.
-		var animationState = new spine.AnimationState(new spine.AnimationStateData(skeleton.data));
-		animationState.setAnimation(0, initialAnimation, true);
-		animationState.addListener(me.eventListener);
+        if(skin != null) {
+    		skeleton.setSkinByName(skin);
+        }
+
+        // Create an AnimationState, and set the initial animation in looping mode.
+        var animationState = new spine.AnimationState(new spine.AnimationStateData(skeleton.data));
+        if(initialAnimation != null)
+        {
+            this.traceEntry = animationState.setAnimation(0, initialAnimation, true);
+            this.traceEntry.timeScale = this.timeScale;
+        }
+        animationState.addListener(me.eventListener);
 
 		// Pack everything up and return to caller.
-		return { skeleton: skeleton, state: animationState, bounds: bounds };
+		return { skeleton: skeleton, state: animationState, bounds: bounds , skeletonData: skeletonData};
 	}
 
 	calculateBounds(skeleton:spine.Skeleton) {
@@ -339,8 +367,10 @@ export class Stage {
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     scmSp : scmSpine = null;
+    // entry:spine.TrackEntry = null;    
     private mNum  = 0;
 
+    // Before OnUpdate
     callBackFunc : () => void = null;
     setCallBackTimeFunc(callBackFunc : () => void) { this.callBackFunc = callBackFunc; }
 
@@ -349,8 +379,9 @@ export class Stage {
         this.OnUpdate(0);
     }
 
-    initSpine(skName : string) {
+    initSpine(skName : string, timeScale? : number) {
         this.scmSp = new scmSpine();
+        this.scmSp.setTimeScale(timeScale);
         this.scmSp.init(skName);
     }
 
@@ -407,7 +438,10 @@ export class Stage {
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
 //            this.ctx.fillStyle = "black";
 //            this.ctx.fillRect(0, 0, 1280, 720);
-            this.ctx.fillStyle = "#cccccc";
+            if(this.scmSp == null)
+                this.ctx.fillStyle = "#ffffff";
+            else
+                this.ctx.fillStyle = "#cccccc";
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);            
             this.ctx.restore();
             
@@ -669,6 +703,14 @@ class myStage extends Stage {
     debugRenderingBtn:scmButton = new scmButton();
     triangleRenderingBtn:scmButton = new scmButton();
 
+    speedBtn0_25X:scmButton = new scmButton();
+    speedBtn0_5X:scmButton = new scmButton();
+    speedBtn1X:scmButton = new scmButton();
+    speedBtn2X:scmButton = new scmButton();
+    speedBtn4X:scmButton = new scmButton();
+    timeScale:number = 1;
+
+
     InitData() {
         this.scene = new Scene();
         this.AddScene(this.scene);
@@ -692,7 +734,14 @@ class myStage extends Stage {
             this.sceneBtn.AddSprite(btn.setFontSize(20).setText(key).setSize(200,30).setCallBackFunc(
                 function() { 
                     let str = key;
-                    stage.scmSp.state.setAnimation(0,btn.getText(),true);  
+                    stage.scmSp.traceEntry = stage.scmSp.state.setAnimation(0,btn.getText(),true);  
+                    stage.scmSp.traceEntry.timeScale = me.timeScale;
+                    // alpha : 1
+                    // animationEnd : 0.533...
+                    // delay
+                    // mixTime : 0
+                    // mixDuration : 0
+                    /// timeScale : 1
                 }).setLocation(x,y));
             y = y + 60;
         }
@@ -714,7 +763,7 @@ class myStage extends Stage {
     UpdateRenderButton() {
         var me = this;
         if(me.scmSp == null) return;
-        if(me.scmSp.skeletonRenderer.debugRendering != me.debugRenderingBtn.tagBool )
+        if(me.scmSp.skeletonRenderer.debugRendering != me.debugRenderingBtn.tagBool)
             me.scmSp.skeletonRenderer.debugRendering = me.debugRenderingBtn.tagBool;
         me.debugRenderingBtn.setText("debugRendering : " + me.scmSp.skeletonRenderer.debugRendering);
 
@@ -729,8 +778,13 @@ class myStage extends Stage {
         //this.RemoveScene(this.sceneBtn.mySceneNum);
         //this.sceneBtn = new Scene();
         //this.AddScene(this.sceneBtn);
+        let me = this;
+        let timeScale = 1;
+        this.initSpine(fname, me.timeScale);
 
-        this.initSpine(fname);
+        this.scmSp.setLoadingCompleteCallBackFunc( function() {  });
+
+
     }
 
     LoadSpineFileList() {
@@ -757,12 +811,9 @@ class myStage extends Stage {
         // ETC Button 
         /////////////////////////////////////////////////////////////////////////////////
 
-        let a = this.canvas.width - 400;
+        let a = this.canvas.width - 600;
         y = 10;
         var me = this;
-
-        //var debugRenderingBtn:scmButton = new scmButton();
-        //var triangleRenderingBtn:scmButton = new scmButton();
 
         this.scene.AddSprite(this.debugRenderingBtn.setFontSize(20).setText("debugRendering : off").setSize(300,30).setCallBackFunc(function() { 
             if(me.scmSp == null) return;
@@ -779,9 +830,43 @@ class myStage extends Stage {
                 me.triangleRenderingBtn.tagBool = false;
             else
                 me.triangleRenderingBtn.tagBool = true;
-        }).setLocation(a/2+150,y));
-        
+        }).setLocation(a/2+150,y));        
         this.UpdateRenderButton();
+
+
+        /////////////////////////////////////////////////////////////////////////////////
+        // Speed Button 
+        /////////////////////////////////////////////////////////////////////////////////
+        y = 90;
+        x = a/2 + 100;
+
+        this.scene.AddSprite(this.speedBtn0_25X.setFontSize(20).setText("x4").setSize(60,30).setCallBackFunc(function() { 
+            me.timeScale = 0.25;
+            if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
+        }).setLocation(x,y));
+        x = x + 80
+        this.scene.AddSprite(this.speedBtn0_5X.setFontSize(20).setText("x2").setSize(60,30).setCallBackFunc(function() { 
+            me.timeScale = 0.5;
+            if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
+        }).setLocation(x,y));
+        x = x + 80
+        this.scene.AddSprite(this.speedBtn1X.setFontSize(20).setText("x1").setSize(60,30).setCallBackFunc(function() { 
+            me.timeScale = 1;
+            if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
+        }).setLocation(x,y));
+        x = x + 80
+        this.scene.AddSprite(this.speedBtn2X.setFontSize(20).setText("0.5").setSize(60,30).setCallBackFunc(function() { 
+            me.timeScale = 2;
+            if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
+        }).setLocation(x,y));
+        x = x + 80
+        this.scene.AddSprite(this.speedBtn4X.setFontSize(20).setText("0.25").setSize(60,30).setCallBackFunc(function() { 
+            me.timeScale = 4;
+            if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
+        }).setLocation(x,y));
+        x = x + 80
+
+        
     }
 
     LoadSpine(fname : string) : void {
@@ -827,45 +912,6 @@ window.onload = () => {
 
 function gameInit() {
     stage.InitData();
-
-    /*
-    var scene = new Scene();
-    stage.AddScene(scene);
-    var x = 700;
-    var y = 110;
-    {
-        let btn2 = new scmButton();
-        btn2.setText("Idle");
-        btn2.setSize(200, 50);
-        scene.AddSprite(btn2);
-        btn2.setLocation(x,y);
-        btn2.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Idle",true); }  ;
-
-        let btn3 = new scmButton();
-        btn3.setText("Walk");
-        btn3.setSize(200, 50);
-        scene.AddSprite(btn3);
-        btn3.setLocation(x,y+60);
-        btn3.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Walk",true); }  ;
-    }
-
-    {
-        let btn = new scmButton();
-        btn.setText("Attack");
-        btn.setSize(200, 50);
-        scene.AddSprite(btn);
-        btn.setLocation(x,y+120);
-        btn.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Attack",false); }  ;
-
-    }
-
-    scene.AddSprite((new scmButton()).setText("Run").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Run",true);    }).setLocation(x,y+180));
-    scene.AddSprite((new scmButton()).setText("Crouch").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Crouch",true);    }).setLocation(x,y+240));
-    scene.AddSprite((new scmButton()).setText("Jump").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Jump",true);    }).setLocation(x,y+300));
-
-    console.log("game init");
-    */
-    // stage.initSpine();
 }
 
  gameInit();
