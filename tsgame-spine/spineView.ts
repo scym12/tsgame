@@ -194,7 +194,7 @@ export class scmSpine {
 		this.context.moveTo(0, -1000);
 		this.context.lineTo(0, 1000);
 		this.context.stroke();
-        
+
 		this.state.update(delta);
 		this.state.apply(this.skeleton);
 		this.skeleton.updateWorldTransform();
@@ -259,13 +259,16 @@ export class SNode {
     unique : Number;
     pivot : Point;
 
-    tag : Number;
+    tag : Number;   // User Define value 
+    tagBool : boolean; // User Define Value
 
     visible : boolean = true;
 
     constructor() {
         this.loc = new Point();
         this.pivot = new Point();
+
+        this.tagBool = true;
     }
 
     getX() { return this.loc.nx + this.pivot.nx; }
@@ -663,6 +666,9 @@ class myStage extends Stage {
     scene:Scene ;
     sceneBtn:Scene ;
 
+    debugRenderingBtn:scmButton = new scmButton();
+    triangleRenderingBtn:scmButton = new scmButton();
+
     InitData() {
         this.scene = new Scene();
         this.AddScene(this.scene);
@@ -705,6 +711,19 @@ class myStage extends Stage {
         }
     }
 
+    UpdateRenderButton() {
+        var me = this;
+        if(me.scmSp == null) return;
+        if(me.scmSp.skeletonRenderer.debugRendering != me.debugRenderingBtn.tagBool )
+            me.scmSp.skeletonRenderer.debugRendering = me.debugRenderingBtn.tagBool;
+        me.debugRenderingBtn.setText("debugRendering : " + me.scmSp.skeletonRenderer.debugRendering);
+
+        if(me.scmSp.skeletonRenderer.triangleRendering != me.triangleRenderingBtn.tagBool)
+            me.scmSp.skeletonRenderer.triangleRendering = me.triangleRenderingBtn.tagBool;
+
+        me.triangleRenderingBtn.setText("triangleRendering : " + me.scmSp.skeletonRenderer.triangleRendering);
+    }
+
     initSpineEx(fname:string) {
         this.sceneBtn.RemoveAllSprite();
         //this.RemoveScene(this.sceneBtn.mySceneNum);
@@ -738,41 +757,31 @@ class myStage extends Stage {
         // ETC Button 
         /////////////////////////////////////////////////////////////////////////////////
 
-        let a = this.canvas.width;
+        let a = this.canvas.width - 400;
         y = 10;
         var me = this;
 
-        var debugRenderingBtn:scmButton = new scmButton();
-        var triangleRenderingBtn:scmButton = new scmButton();
+        //var debugRenderingBtn:scmButton = new scmButton();
+        //var triangleRenderingBtn:scmButton = new scmButton();
 
-        this.scene.AddSprite(debugRenderingBtn.setFontSize(20).setText("debugRendering : off").setSize(300,30).setCallBackFunc(function() { 
+        this.scene.AddSprite(this.debugRenderingBtn.setFontSize(20).setText("debugRendering : off").setSize(300,30).setCallBackFunc(function() { 
             if(me.scmSp == null) return;
-            if(me.scmSp.skeletonRenderer.debugRendering == true)
-            {
-                me.scmSp.skeletonRenderer.debugRendering = false;
-            }
+            if(me.debugRenderingBtn.tagBool == true)
+                me.debugRenderingBtn.tagBool = false;
             else
-            {
-                me.scmSp.skeletonRenderer.debugRendering = true;
-            }
-            debugRenderingBtn.setText("debugRendering : " + me.scmSp.skeletonRenderer.debugRendering);
+                me.debugRenderingBtn.tagBool = true;
         }).setLocation(a/2+150,y));
 
         y = y + 35;
-        this.scene.AddSprite(triangleRenderingBtn.setFontSize(20).setText("triangleRendering : off").setSize(300,30).setCallBackFunc(function() { 
+        this.scene.AddSprite(this.triangleRenderingBtn.setFontSize(20).setText("triangleRendering : off").setSize(300,30).setCallBackFunc(function() { 
             if(me.scmSp == null) return;
-            if(me.scmSp.skeletonRenderer.triangleRendering == true)
-            {
-                me.scmSp.skeletonRenderer.triangleRendering = false;
-            }
+            if(me.triangleRenderingBtn.tagBool == true)
+                me.triangleRenderingBtn.tagBool = false;
             else
-            {
-                me.scmSp.skeletonRenderer.triangleRendering = true;
-            }
-            triangleRenderingBtn.setText("triangleRendering : " + me.scmSp.skeletonRenderer.triangleRendering);
+                me.triangleRenderingBtn.tagBool = true;
         }).setLocation(a/2+150,y));
-
-
+        
+        this.UpdateRenderButton();
     }
 
     LoadSpine(fname : string) : void {
@@ -781,6 +790,7 @@ class myStage extends Stage {
     }
 
     OnUpdateEx() : void {
+        this.UpdateRenderButton();
         if(manager.fileList != null)
         {
             this.LoadSpineFileList();
