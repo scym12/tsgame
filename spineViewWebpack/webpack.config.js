@@ -1,10 +1,12 @@
  module.exports = {
      entry: { 
-         'scmSpine' : './scmSpine.js',
-         'scm2D' : './scm2D.js',
-         'spineView' : './spineView.js' 
+         javascript : './scmSpine.js',
+         javascript : './scm2D.js',
+         javascript : './spineView.js' 
      },
      output: {
-         filename: './bin/app.bundle.js'
+         filename: './bin/app.bundle.js',
+		chunkFilename: '[id].[chunkhash].js'
+
      }
  };
