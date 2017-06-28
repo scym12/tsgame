@@ -86,19 +86,21 @@ export class Sprite extends SNode {
 
 
 export class Stage {
-
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     scmSp : tsSpine.scmSpine = null;
-    // entry:spine.TrackEntry = null;    
     private mNum  = 0;
+
+    // default Scene
+    private defaultScene : Scene = new Scene();
+    getDefaultScene() { return this.defaultScene; }
 
     // Before OnUpdate
     callBackFunc : () => void = null;
     setCallBackTimeFunc(callBackFunc : () => void) { this.callBackFunc = callBackFunc; }
 
-
     constructor() {
+        this.AddScene(this.defaultScene);
         this.OnUpdate(0);
     }
 
@@ -111,6 +113,11 @@ export class Stage {
     setCanvas(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext("2d");
+
+        var me = this;
+        this.canvas.addEventListener("mousedown", function(event: MouseEvent) { me.mouseDown(event); }, false);
+        this.canvas.addEventListener("mouseup", function(event: MouseEvent) { me.mouseUp(event); }, false);
+        
     }
 
     public mScene: { [keycode: number]: Scene; } = {};
@@ -177,9 +184,9 @@ export class Stage {
                     scene.OnUpdate(this.ctx,tm);
             }
 
-            var av = this;
-            requestAnimationFrame(function(tm) { av.OnUpdate(tm); });	
         }
+        var av = this;
+        requestAnimationFrame(function(tm) { av.OnUpdate(tm); });	
 
     }
 
@@ -250,10 +257,43 @@ export class Scene {
 }
 
 
+export class scmSpineAni extends Sprite {
+    spine : tsSpine.scmSpine = null;
+
+    setDebug(num : number) {
+        this.spine.debugLine = num;
+    }
+
+    initSpine(skName : string, timeScale? : number) {
+        this.spine = new tsSpine.scmSpine();
+        this.spine.setTimeScale(timeScale);
+        this.spine.init(skName);
+    }
+
+    OnUpdate(ctx :CanvasRenderingContext2D,tm) : void {
+        var me = this;
+        if(me.spine != null) {
+            if(me.spine.skeleton) {
+                this.spine.skeleton.x = this.getX();
+                this.spine.skeleton.y = this.getY();       
+            }
+            me.spine.OnUpdate(ctx,tm);
+        }
+    }    
+
+    setLocation(x,y) : scmSpineAni {
+        this.loc.nx = x;
+        this.loc.ny = y;
+        //this.spine.skeleton.x = x;
+        //this.spine.skeleton.y = y;
+        return this;
+    }
+
+}
 
 export class scmButton extends Sprite {
-    imgUp : HTMLImageElement;
-    imgDown : HTMLImageElement;
+    imgUp : HTMLImageElement = null;
+    imgDown : HTMLImageElement = null;
     btnState = 0;
 
     callBackFunc : () => void = null;
@@ -267,10 +307,25 @@ export class scmButton extends Sprite {
     btnUpColor : string = "#0000ff";
     btnDownColor : string = "#5555ff";
 
+    constructor(upimg? : string, downimg? : string) {
+        super();
+
+        if(upimg)
+            this.loadImage(upimg);
+        if(downimg)
+            this.setImageD(downimg);
+    }
+
     loadImage(name : String) {
         super.loadImage(name);
         this.imgUp = this.img;
     }
+
+    setImageD(img : String) {
+        this.imgDown = new Image();
+        this.imgDown.onload = function() { }
+        this.imgDown.src = img.toString();               
+    }    
 
     setFontSize(sz): scmButton { this.fontSize = sz; return this; }
     setText(text : string):scmButton {  this.text = text; return this; }
@@ -324,11 +379,6 @@ export class scmButton extends Sprite {
         if(this.imgUp && this.btnState == 0) this.img = this.imgUp;
     }    
 
-    setImageD(img : String) {
-        this.imgDown = new Image();
-        this.imgDown.onload = function() { }
-        this.imgDown.src = img.toString();               
-    }
 
     OnUpdate(ctx :CanvasRenderingContext2D,tm) : void {
         if(this.visible == false) return;
@@ -363,8 +413,6 @@ export class scmButton extends Sprite {
             ctx.fillStyle = fStyle;   
 
 		    ctx.restore();
-
-
         }
         else
             super.OnUpdate(ctx,tm);

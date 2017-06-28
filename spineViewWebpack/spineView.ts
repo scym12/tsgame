@@ -229,10 +229,6 @@ window.onload = () => {
     var canvas: HTMLCanvasElement;
     canvas = <HTMLCanvasElement>document.getElementById('canvas');
     stage.setCanvas(canvas);
-    stage.OnUpdate(0);
-
-    canvas.addEventListener("mousedown", function(event: MouseEvent) { stage.mouseDown(event); }, false);
-    canvas.addEventListener("mouseup", function(event: MouseEvent) { stage.mouseUp(event); }, false);
 
     console.log("window.onload");
 

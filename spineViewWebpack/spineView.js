@@ -213,9 +213,6 @@ window.onload = function () {
     var canvas;
     canvas = document.getElementById('canvas');
     stage.setCanvas(canvas);
-    stage.OnUpdate(0);
-    canvas.addEventListener("mousedown", function (event) { stage.mouseDown(event); }, false);
-    canvas.addEventListener("mouseup", function (event) { stage.mouseUp(event); }, false);
     console.log("window.onload");
 };
 function gameInit() {

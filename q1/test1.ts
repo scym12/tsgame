@@ -8,8 +8,8 @@ import "./test2.ts"
 
 export class test2 {
     func() {
-       // var a : test1 = new test1();
-       // a.func();
+       var a : test1 = new test1();
+       a.func();
 
         console.log("test1");
     }

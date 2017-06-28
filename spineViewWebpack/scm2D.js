@@ -87,8 +87,9 @@ exports.Sprite = Sprite;
 var Stage = (function () {
     function Stage() {
         this.scmSp = null;
-        // entry:spine.TrackEntry = null;    
         this.mNum = 0;
+        // default Scene
+        this.defaultScene = new Scene();
         // Before OnUpdate
         this.callBackFunc = null;
         this.mScene = {};
@@ -120,12 +121,14 @@ var Stage = (function () {
                     if (scene)
                         scene.OnUpdate(this.ctx, tm);
                 }
-                var av = this;
-                requestAnimationFrame(function (tm) { av.OnUpdate(tm); });
             }
+            var av = this;
+            requestAnimationFrame(function (tm) { av.OnUpdate(tm); });
         };
+        this.AddScene(this.defaultScene);
         this.OnUpdate(0);
     }
+    Stage.prototype.getDefaultScene = function () { return this.defaultScene; };
     Stage.prototype.setCallBackTimeFunc = function (callBackFunc) { this.callBackFunc = callBackFunc; };
     Stage.prototype.initSpine = function (skName, timeScale) {
         this.scmSp = new tsSpine.scmSpine();
@@ -135,6 +138,9 @@ var Stage = (function () {
     Stage.prototype.setCanvas = function (canvas) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext("2d");
+        var me = this;
+        this.canvas.addEventListener("mousedown", function (event) { me.mouseDown(event); }, false);
+        this.canvas.addEventListener("mouseup", function (event) { me.mouseUp(event); }, false);
     };
     Stage.prototype.AddScene = function (scene) {
         this.mNum = this.mNum + 1;
@@ -210,10 +216,47 @@ var Scene = (function () {
     return Scene;
 }());
 exports.Scene = Scene;
+var scmSpineAni = (function (_super) {
+    __extends(scmSpineAni, _super);
+    function scmSpineAni() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.spine = null;
+        return _this;
+    }
+    scmSpineAni.prototype.setDebug = function (num) {
+        this.spine.debugLine = num;
+    };
+    scmSpineAni.prototype.initSpine = function (skName, timeScale) {
+        this.spine = new tsSpine.scmSpine();
+        this.spine.setTimeScale(timeScale);
+        this.spine.init(skName);
+    };
+    scmSpineAni.prototype.OnUpdate = function (ctx, tm) {
+        var me = this;
+        if (me.spine != null) {
+            if (me.spine.skeleton) {
+                this.spine.skeleton.x = this.getX();
+                this.spine.skeleton.y = this.getY();
+            }
+            me.spine.OnUpdate(ctx, tm);
+        }
+    };
+    scmSpineAni.prototype.setLocation = function (x, y) {
+        this.loc.nx = x;
+        this.loc.ny = y;
+        //this.spine.skeleton.x = x;
+        //this.spine.skeleton.y = y;
+        return this;
+    };
+    return scmSpineAni;
+}(Sprite));
+exports.scmSpineAni = scmSpineAni;
 var scmButton = (function (_super) {
     __extends(scmButton, _super);
-    function scmButton() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
+    function scmButton(upimg, downimg) {
+        var _this = _super.call(this) || this;
+        _this.imgUp = null;
+        _this.imgDown = null;
         _this.btnState = 0;
         _this.callBackFunc = null;
         _this.text = null;
@@ -224,11 +267,20 @@ var scmButton = (function (_super) {
         _this.fontColor = "#ff0000";
         _this.btnUpColor = "#0000ff";
         _this.btnDownColor = "#5555ff";
+        if (upimg)
+            _this.loadImage(upimg);
+        if (downimg)
+            _this.setImageD(downimg);
         return _this;
     }
     scmButton.prototype.loadImage = function (name) {
         _super.prototype.loadImage.call(this, name);
         this.imgUp = this.img;
+    };
+    scmButton.prototype.setImageD = function (img) {
+        this.imgDown = new Image();
+        this.imgDown.onload = function () { };
+        this.imgDown.src = img.toString();
     };
     scmButton.prototype.setFontSize = function (sz) { this.fontSize = sz; return this; };
     scmButton.prototype.setText = function (text) { this.text = text; return this; };
@@ -275,11 +327,6 @@ var scmButton = (function (_super) {
             this.btnState = 0;
         if (this.imgUp && this.btnState == 0)
             this.img = this.imgUp;
-    };
-    scmButton.prototype.setImageD = function (img) {
-        this.imgDown = new Image();
-        this.imgDown.onload = function () { };
-        this.imgDown.src = img.toString();
     };
     scmButton.prototype.OnUpdate = function (ctx, tm) {
         if (this.visible == false)
