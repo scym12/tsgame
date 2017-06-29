@@ -194,6 +194,78 @@ export class Stage {
 
 
 
+class SpriteList {
+    private arr : Sprite[] = [];
+
+    AddNode(sp : Sprite) {
+        this.arr.push(sp);
+    }
+
+    DeleteNode(sp : Sprite) {
+        for(var idx in this.arr) {
+            if(this.arr[idx] == sp)
+            {
+                var ret = this.arr.splice(Number(idx),1);
+                console.log(ret);
+                console.log(this.arr);
+                break;
+            }
+        }
+
+    }
+    GetNodeList() {
+        return this.arr;
+    }
+}
+
+class SpriteManager {
+    arr: { [keycode: number]: SpriteList } = {};
+    
+    AddSprite(s : Sprite, num? : number) {
+        if(num == null) num = 10;
+        if(this.arr[num] == null)
+        {
+            let arrSub : SpriteList = new SpriteList();
+            this.arr[num] = arrSub;     
+            arrSub.AddNode(s);
+        }
+        else 
+            this.arr[num].AddNode(s);
+
+        return s;
+    }
+
+    RemoveSprite(s:Sprite) {
+        for(var idx in this.arr) {
+            this.arr[idx].DeleteNode(s);
+        }
+    }
+
+    RemoveAllSprite() {
+        this.arr = {};
+    }
+
+    Loop(callBackFunc : (s:Sprite) => void) {
+        for(var idx in this.arr) {
+            let arr : Sprite[] = this.arr[idx].GetNodeList();
+            for(var idx2 in arr) {
+                if(callBackFunc != null) 
+                    callBackFunc(arr[idx2]);
+            }
+        }
+    }
+
+    GetChildCount(): number  {
+        let cnt : number = 0;
+        for(var idx in this.arr) {
+            cnt = cnt + this.arr[idx].GetNodeList.length;
+        }
+        return cnt;
+    }
+}
+
+
+
 export class Scene {
     parent : Stage = null;
     mySceneNum:number = 0; 
@@ -209,50 +281,45 @@ export class Scene {
         this.node.setNumber(num);
     }
 
-    public mSprite: { [keycode: number]: Sprite; } = {};
+    // public mSprite: { [keycode: number]: Sprite; } = {};
+    mSpriteManager : SpriteManager = new SpriteManager();
     
     private mNum  = 0;
     AddSprite(sprite : Sprite) {
         this.mNum = this.mNum + 1;
         sprite.setNumber(this.mNum);
-        this.mSprite[this.mNum] = sprite;
         sprite.setParent(this);
+        this.mSpriteManager.AddSprite(sprite);
     }
 
-    RemoveSprite(num) {
-        this.mSprite[num] = null; 
+    RemoveSprite(sprite : Sprite) {
+        this.mSpriteManager.RemoveSprite(sprite);
     }
 
     RemoveAllSprite() {
-        this.mSprite = {};
+        this.mSpriteManager.RemoveAllSprite();
     }
 
     GetChildCount(): number  {
-        let cnt = 0;
-        for (var key in this.mSprite) {           
-            cnt = cnt + 1;
-        }
-        return cnt;
+        return this.mSpriteManager.GetChildCount();
     }
 
 
     OnUpdate(ctx : CanvasRenderingContext2D, tm) : void {
-        //console.log("scene update"+ ctx);
-        for (var key in this.mSprite) {           
-            var sprite: Sprite = this.mSprite[key];
-            sprite.OnUpdate(ctx,tm);
-        }
+        this.mSpriteManager.Loop( function(s:Sprite) {
+            s.OnUpdate(ctx,tm);
+        });
     }
 
     mouseDown(event: MouseEvent): void { 
-        for (var key in this.mSprite) {           
-            this.mSprite[key].mouseDown(event);
-        }        
+        this.mSpriteManager.Loop( function(s:Sprite) {
+            s.mouseDown(event);
+        });
     }
     mouseUp(event: MouseEvent): void { 
-        for (var key in this.mSprite) {           
-            this.mSprite[key].mouseUp(event);
-        }        
+        this.mSpriteManager.Loop( function(s:Sprite) {
+            s.mouseUp(event);
+        });   
     }
 }
 

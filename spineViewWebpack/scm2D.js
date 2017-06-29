@@ -165,11 +165,69 @@ var Stage = (function () {
     return Stage;
 }());
 exports.Stage = Stage;
+var SpriteList = (function () {
+    function SpriteList() {
+        this.arr = [];
+    }
+    SpriteList.prototype.AddNode = function (sp) {
+        this.arr.push(sp);
+    };
+    SpriteList.prototype.DeleteNode = function (sp) {
+        for (var idx in this.arr) {
+            if (this.arr[idx] == sp) {
+                var ret = this.arr.splice(Number(idx), 1);
+                console.log(ret);
+                console.log(this.arr);
+                break;
+            }
+        }
+    };
+    SpriteList.prototype.GetNodeList = function () {
+        return this.arr;
+    };
+    return SpriteList;
+}());
+var SpriteManager = (function () {
+    function SpriteManager() {
+        this.arr = {};
+    }
+    SpriteManager.prototype.AddSprite = function (s, num) {
+        if (num == null)
+            num = 10;
+        if (this.arr[num] == null) {
+            var arrSub = new SpriteList();
+            this.arr[num] = arrSub;
+            arrSub.AddNode(s);
+        }
+        else
+            this.arr[num].AddNode(s);
+        return s;
+    };
+    SpriteManager.prototype.RemoveSprite = function (s) {
+        for (var idx in this.arr) {
+            this.arr[idx].DeleteNode(s);
+        }
+    };
+    SpriteManager.prototype.RemoveAllSprite = function () {
+        this.arr = {};
+    };
+    SpriteManager.prototype.Loop = function (callBackFunc) {
+        for (var idx in this.arr) {
+            var arr = this.arr[idx].GetNodeList();
+            for (var idx2 in arr) {
+                if (callBackFunc != null)
+                    callBackFunc(arr[idx2]);
+            }
+        }
+    };
+    return SpriteManager;
+}());
 var Scene = (function () {
     function Scene() {
         this.parent = null;
         this.mySceneNum = 0;
         this.mSprite = {};
+        this.mSpriteManager = new SpriteManager();
         this.mNum = 0;
         this.node = new SNode();
     }
@@ -182,6 +240,10 @@ var Scene = (function () {
         sprite.setNumber(this.mNum);
         this.mSprite[this.mNum] = sprite;
         sprite.setParent(this);
+        this.mSpriteManager.AddSprite(sprite);
+    };
+    Scene.prototype.RemoveSprite2 = function (sprite) {
+        this.mSpriteManager.RemoveSprite(sprite);
     };
     Scene.prototype.RemoveSprite = function (num) {
         this.mSprite[num] = null;
@@ -198,20 +260,29 @@ var Scene = (function () {
     };
     Scene.prototype.OnUpdate = function (ctx, tm) {
         //console.log("scene update"+ ctx);
-        for (var key in this.mSprite) {
-            var sprite = this.mSprite[key];
-            sprite.OnUpdate(ctx, tm);
-        }
+        //        for (var key in this.mSprite) {           
+        //            var sprite: Sprite = this.mSprite[key];
+        //            sprite.OnUpdate(ctx,tm);
+        //        }
+        this.mSpriteManager.Loop(function (s) {
+            s.OnUpdate(ctx, tm);
+        });
     };
     Scene.prototype.mouseDown = function (event) {
-        for (var key in this.mSprite) {
-            this.mSprite[key].mouseDown(event);
-        }
+        this.mSpriteManager.Loop(function (s) {
+            s.mouseDown(event);
+        });
+        //        for (var key in this.mSprite) {           
+        //            this.mSprite[key].mouseDown(event);
+        //        }        
     };
     Scene.prototype.mouseUp = function (event) {
-        for (var key in this.mSprite) {
-            this.mSprite[key].mouseUp(event);
-        }
+        this.mSpriteManager.Loop(function (s) {
+            s.mouseUp(event);
+        });
+        //        for (var key in this.mSprite) {           
+        //            this.mSprite[key].mouseUp(event);
+        //        }        
     };
     return Scene;
 }());
