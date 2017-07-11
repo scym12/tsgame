@@ -27,6 +27,7 @@ export class scmSpine {
 	skeletonRenderer: spine.canvas.SkeletonRenderer = null;
     x : number = 0;
     y : number = 0;
+	debugLine : number = 0;
 
 	// Attack Crouch Fall Headturn Idle Jump Run Walk 
 	//skelName: string  = "hero-mesh";
@@ -210,13 +211,15 @@ export class scmSpine {
 		this.context.restore();
 
 
-		this.context.strokeStyle = "green";
-		this.context.beginPath();
-		this.context.moveTo(-1000, 0);
-		this.context.lineTo(1000, 0);
-		this.context.moveTo(0, -1000);
-		this.context.lineTo(0, 1000);
-		this.context.stroke();
+		if(this.debugLine > 0) {
+			this.context.strokeStyle = "green";
+			this.context.beginPath();
+			this.context.moveTo(-1000, 0);
+			this.context.lineTo(1000, 0);
+			this.context.moveTo(0, -1000);
+			this.context.lineTo(0, 1000);
+			this.context.stroke();
+		}
 
 		this.state.update(delta);
 		this.state.apply(this.skeleton);
@@ -255,8 +258,10 @@ export class scmSpine {
 		this.context.setTransform(1, 0, 0, 1, 0, 0);
 
 		this.context.scale(1 / scale, 1 / scale);
-		this.context.translate(-centerX, -centerY);
-		this.context.translate(width / 2 + this.x, height / 2 + this.y);
+		//this.context.translate(-centerX, -centerY);
+		//this.context.translate(width / 2 + this.x, height / 2 + this.y);
+		this.context.translate(0,0);
+		//console.log("resize : " + centerX + " : " + centerY + " : " + width + " : " + height) ;
 	}
 }
 

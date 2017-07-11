@@ -5631,260 +5631,38 @@ var spine;
 
 "use strict";
 
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = Object.setPrototypeOf ||
-        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 exports.__esModule = true;
-//---------------------------------------------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------------------------------------------
-// main.ts 
-//---------------------------------------------------------------------------------------------------------------------------
-//---------------------------------------------------------------------------------------------------------------------------
 __webpack_require__(0);
 var ts2D = __webpack_require__(2);
-var GameManager = (function () {
-    function GameManager() {
-    }
-    GameManager.prototype.setCharState = function (state) {
-    };
-    GameManager.prototype.charIdle = function () {
-    };
-    GameManager.prototype.charWalk = function () {
-    };
-    GameManager.prototype.charAttack = function () {
-    };
-    return GameManager;
-}());
-var myStage = (function (_super) {
-    __extends(myStage, _super);
-    function myStage() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.debugRenderingBtn = new ts2D.scmButton();
-        _this.triangleRenderingBtn = new ts2D.scmButton();
-        _this.speedBtn0_25X = new ts2D.scmButton();
-        _this.speedBtn0_5X = new ts2D.scmButton();
-        _this.speedBtn1X = new ts2D.scmButton();
-        _this.speedBtn2X = new ts2D.scmButton();
-        _this.speedBtn4X = new ts2D.scmButton();
-        _this.timeScale = 1;
-        return _this;
-    }
-    myStage.prototype.InitData = function () {
-        this.scene = new ts2D.Scene();
-        this.AddScene(this.scene);
-        this.sceneBtn = new ts2D.Scene();
-        this.AddScene(this.sceneBtn);
-    };
-    myStage.prototype.InitAnimationButton = function () {
-        if (this.sceneBtn.GetChildCount() > 0 || this.scmSp == null)
-            return;
-        var a = this.canvas.width;
-        var b = this.canvas.height;
-        var x = a - 300;
-        var y = 10;
-        var me = this;
-        var _loop_1 = function () {
-            var btn = new ts2D.scmButton();
-            this_1.sceneBtn.AddSprite(btn.setFontSize(20).setText(key).setSize(200, 30).setCallBackFunc(function () {
-                var str = key;
-                stage.scmSp.traceEntry = stage.scmSp.state.setAnimation(0, btn.getText(), true);
-                stage.scmSp.traceEntry.timeScale = me.timeScale;
-                // alpha : 1
-                // animationEnd : 0.533...
-                // delay
-                // mixTime : 0
-                // mixDuration : 0
-                /// timeScale : 1
-            }).setLocation(x, y));
-            y = y + 60;
-        };
-        var this_1 = this;
-        for (var key in this.scmSp.animArr) {
-            _loop_1();
-        }
-        y = 10;
-        x = x - 250;
-        var _loop_2 = function () {
-            var btn = new ts2D.scmButton();
-            this_2.sceneBtn.AddSprite(btn.setFontSize(20).setText(key).setSize(200, 30).setCallBackFunc(function () {
-                var str = key;
-                stage.scmSp.skeleton.setSkinByName(btn.getText());
-            }).setLocation(x, y));
-            y = y + 60;
-        };
-        var this_2 = this;
-        for (var key in this.scmSp.skinArr) {
-            _loop_2();
-        }
-    };
-    myStage.prototype.UpdateRenderButton = function () {
-        var me = this;
-        if (me.scmSp == null)
-            return;
-        if (me.scmSp.skeletonRenderer.debugRendering != me.debugRenderingBtn.tagBool)
-            me.scmSp.skeletonRenderer.debugRendering = me.debugRenderingBtn.tagBool;
-        me.debugRenderingBtn.setText("debugRendering : " + me.scmSp.skeletonRenderer.debugRendering);
-        if (me.scmSp.skeletonRenderer.triangleRendering != me.triangleRenderingBtn.tagBool)
-            me.scmSp.skeletonRenderer.triangleRendering = me.triangleRenderingBtn.tagBool;
-        me.triangleRenderingBtn.setText("triangleRendering : " + me.scmSp.skeletonRenderer.triangleRendering);
-    };
-    myStage.prototype.initSpineEx = function (fname) {
-        this.sceneBtn.RemoveAllSprite();
-        //this.RemoveScene(this.sceneBtn.mySceneNum);
-        //this.sceneBtn = new Scene();
-        //this.AddScene(this.sceneBtn);
-        var me = this;
-        var timeScale = 1;
-        this.initSpine(fname, me.timeScale);
-        this.scmSp.setLoadingCompleteCallBackFunc(function () { });
-    };
-    myStage.prototype.LoadSpineFileList = function () {
-        this.scene.RemoveAllSprite();
-        var x = 10;
-        var y = 10;
-        var _loop_3 = function () {
-            if (manager.fileList[key] && manager.fileList[key].length > 1) {
-                var sz = manager.fileList[key].length;
-                var fname_1 = manager.fileList[key].substr(0, sz - 6);
-                //console.log("FileList1 : [" + manager.fileList[key]+ "]");
-                //console.log("FileList2 : " + manager.fileList[key].substr(0,sz-6));
-                me = this_3;
-                this_3.scene.AddSprite((new ts2D.scmButton()).setFontSize(20).setText(fname_1).setSize(200, 30).setCallBackFunc(function () { me.initSpineEx(fname_1); }).setLocation(x, y));
-                y = y + 40;
-            }
-        };
-        var this_3 = this, me;
-        for (var key in manager.fileList) {
-            _loop_3();
-        }
-        /////////////////////////////////////////////////////////////////////////////////
-        // ETC Button 
-        /////////////////////////////////////////////////////////////////////////////////
-        var a = this.canvas.width - 600;
-        y = 10;
-        var me = this;
-        this.scene.AddSprite(this.debugRenderingBtn.setFontSize(20).setText("debugRendering : off").setSize(300, 30).setCallBackFunc(function () {
-            if (me.scmSp == null)
-                return;
-            if (me.debugRenderingBtn.tagBool == true)
-                me.debugRenderingBtn.tagBool = false;
-            else
-                me.debugRenderingBtn.tagBool = true;
-        }).setLocation(a / 2 + 150, y));
-        y = y + 35;
-        this.scene.AddSprite(this.triangleRenderingBtn.setFontSize(20).setText("triangleRendering : off").setSize(300, 30).setCallBackFunc(function () {
-            if (me.scmSp == null)
-                return;
-            if (me.triangleRenderingBtn.tagBool == true)
-                me.triangleRenderingBtn.tagBool = false;
-            else
-                me.triangleRenderingBtn.tagBool = true;
-        }).setLocation(a / 2 + 150, y));
-        this.UpdateRenderButton();
-        /////////////////////////////////////////////////////////////////////////////////
-        // Speed Button 
-        /////////////////////////////////////////////////////////////////////////////////
-        y = 90;
-        x = a / 2 + 100;
-        this.scene.AddSprite(this.speedBtn0_25X.setFontSize(20).setText("x4").setSize(60, 30).setCallBackFunc(function () {
-            me.timeScale = 0.25;
-            if (me.scmSp != null && me.scmSp.traceEntry != null)
-                me.scmSp.traceEntry.timeScale = me.timeScale;
-        }).setLocation(x, y));
-        x = x + 80;
-        this.scene.AddSprite(this.speedBtn0_5X.setFontSize(20).setText("x2").setSize(60, 30).setCallBackFunc(function () {
-            me.timeScale = 0.5;
-            if (me.scmSp != null && me.scmSp.traceEntry != null)
-                me.scmSp.traceEntry.timeScale = me.timeScale;
-        }).setLocation(x, y));
-        x = x + 80;
-        this.scene.AddSprite(this.speedBtn1X.setFontSize(20).setText("x1").setSize(60, 30).setCallBackFunc(function () {
-            me.timeScale = 1;
-            if (me.scmSp != null && me.scmSp.traceEntry != null)
-                me.scmSp.traceEntry.timeScale = me.timeScale;
-        }).setLocation(x, y));
-        x = x + 80;
-        this.scene.AddSprite(this.speedBtn2X.setFontSize(20).setText("0.5").setSize(60, 30).setCallBackFunc(function () {
-            me.timeScale = 2;
-            if (me.scmSp != null && me.scmSp.traceEntry != null)
-                me.scmSp.traceEntry.timeScale = me.timeScale;
-        }).setLocation(x, y));
-        x = x + 80;
-        this.scene.AddSprite(this.speedBtn4X.setFontSize(20).setText("0.25").setSize(60, 30).setCallBackFunc(function () {
-            me.timeScale = 4;
-            if (me.scmSp != null && me.scmSp.traceEntry != null)
-                me.scmSp.traceEntry.timeScale = me.timeScale;
-        }).setLocation(x, y));
-        x = x + 80;
-    };
-    myStage.prototype.LoadSpine = function (fname) {
-    };
-    myStage.prototype.OnUpdateEx = function () {
-        this.UpdateRenderButton();
-        if (manager.fileList != null) {
-            this.LoadSpineFileList();
-            manager.fileList = null;
-        }
-        if (this.scmSp && this.scmSp.animArr != null) {
-            this.InitAnimationButton();
-        }
-    };
-    return myStage;
-}(ts2D.Stage));
-var stage = new myStage();
-var manager = new GameManager();
-stage.setCallBackTimeFunc(function () { stage.OnUpdateEx(); });
+var stage = new ts2D.Stage();
 window.onload = function () {
-    var canvas;
-    canvas = document.getElementById('canvas');
+    var canvas = document.getElementById('canvas');
     stage.setCanvas(canvas);
-    console.log("window.onload");
 };
-function gameInit() {
-    stage.InitData();
+function func() {
+    console.log("Click!!!");
 }
-gameInit();
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-//----------------------------------------------------------------------------------------------------------------------------------------------
-function readTextFile(file) {
-    var rawFile = new XMLHttpRequest();
-    rawFile.open("GET", file, false);
-    rawFile.onreadystatechange = function () {
-        if (rawFile.readyState === 4) {
-            if (rawFile.status === 200 || rawFile.status == 0) {
-                var allText = rawFile.responseText;
-                var allText2 = rawFile.response;
-                var ret = allText.split("\n");
-                //console.log(allText);
-                //console.log(allText2);
-                manager.fileList = ret;
-            }
-        }
-    };
-    rawFile.send(null);
+function InitData() {
+    // Text Button
+    var scene = stage.getDefaultScene();
+    var btn = new ts2D.scmButton();
+    btn.setFontSize(20);
+    btn.setText("Click Me!");
+    btn.setSize(100, 50);
+    btn.setCallBackFunc(func);
+    btn.setLocation(100, 100);
+    scene.AddSprite(btn);
+    //stage.initSpine("hero", 1);
+    var spine = new ts2D.scmSpineAni();
+    spine.initSpine("hero", 1);
+    spine.setLocation(500, 500);
+    scene.AddSprite(spine);
+    var spine2 = new ts2D.scmSpineAni();
+    spine2.initSpine("hero", 1);
+    spine2.setLocation(800, 600);
+    scene.AddSprite(spine2);
 }
-readTextFile("list.txt");
-//----------------------------------------------------------------------------------------------------------------------------------------------
+InitData();
 
 
 /***/ }),
@@ -6110,10 +5888,47 @@ var Scene = (function () {
     return Scene;
 }());
 exports.Scene = Scene;
+var scmSpineAni = (function (_super) {
+    __extends(scmSpineAni, _super);
+    function scmSpineAni() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.spine = null;
+        return _this;
+    }
+    scmSpineAni.prototype.setDebug = function (num) {
+        this.spine.debugLine = num;
+    };
+    scmSpineAni.prototype.initSpine = function (skName, timeScale) {
+        this.spine = new tsSpine.scmSpine();
+        this.spine.setTimeScale(timeScale);
+        this.spine.init(skName);
+    };
+    scmSpineAni.prototype.OnUpdate = function (ctx, tm) {
+        var me = this;
+        if (me.spine != null) {
+            if (me.spine.skeleton) {
+                this.spine.skeleton.x = this.getX();
+                this.spine.skeleton.y = this.getY();
+            }
+            me.spine.OnUpdate(ctx, tm);
+        }
+    };
+    scmSpineAni.prototype.setLocation = function (x, y) {
+        this.loc.nx = x;
+        this.loc.ny = y;
+        //this.spine.skeleton.x = x;
+        //this.spine.skeleton.y = y;
+        return this;
+    };
+    return scmSpineAni;
+}(Sprite));
+exports.scmSpineAni = scmSpineAni;
 var scmButton = (function (_super) {
     __extends(scmButton, _super);
-    function scmButton() {
-        var _this = _super !== null && _super.apply(this, arguments) || this;
+    function scmButton(upimg, downimg) {
+        var _this = _super.call(this) || this;
+        _this.imgUp = null;
+        _this.imgDown = null;
         _this.btnState = 0;
         _this.callBackFunc = null;
         _this.text = null;
@@ -6124,11 +5939,20 @@ var scmButton = (function (_super) {
         _this.fontColor = "#ff0000";
         _this.btnUpColor = "#0000ff";
         _this.btnDownColor = "#5555ff";
+        if (upimg)
+            _this.loadImage(upimg);
+        if (downimg)
+            _this.setImageD(downimg);
         return _this;
     }
     scmButton.prototype.loadImage = function (name) {
         _super.prototype.loadImage.call(this, name);
         this.imgUp = this.img;
+    };
+    scmButton.prototype.setImageD = function (img) {
+        this.imgDown = new Image();
+        this.imgDown.onload = function () { };
+        this.imgDown.src = img.toString();
     };
     scmButton.prototype.setFontSize = function (sz) { this.fontSize = sz; return this; };
     scmButton.prototype.setText = function (text) { this.text = text; return this; };
@@ -6175,11 +5999,6 @@ var scmButton = (function (_super) {
             this.btnState = 0;
         if (this.imgUp && this.btnState == 0)
             this.img = this.imgUp;
-    };
-    scmButton.prototype.setImageD = function (img) {
-        this.imgDown = new Image();
-        this.imgDown.onload = function () { };
-        this.imgDown.src = img.toString();
     };
     scmButton.prototype.OnUpdate = function (ctx, tm) {
         if (this.visible == false)
@@ -6261,6 +6080,7 @@ var scmSpine = (function () {
         this.skeletonRenderer = null;
         this.x = 0;
         this.y = 0;
+        this.debugLine = 0;
         // Attack Crouch Fall Headturn Idle Jump Run Walk 
         //skelName: string  = "hero-mesh";
         this.skelName = "hero";
@@ -6403,13 +6223,15 @@ var scmSpine = (function () {
         //		this.context.fillStyle = "#cccccc";
         //		this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.restore();
-        this.context.strokeStyle = "green";
-        this.context.beginPath();
-        this.context.moveTo(-1000, 0);
-        this.context.lineTo(1000, 0);
-        this.context.moveTo(0, -1000);
-        this.context.lineTo(0, 1000);
-        this.context.stroke();
+        if (this.debugLine > 0) {
+            this.context.strokeStyle = "green";
+            this.context.beginPath();
+            this.context.moveTo(-1000, 0);
+            this.context.lineTo(1000, 0);
+            this.context.moveTo(0, -1000);
+            this.context.lineTo(0, 1000);
+            this.context.stroke();
+        }
         this.state.update(delta);
         this.state.apply(this.skeleton);
         this.skeleton.updateWorldTransform();
@@ -6439,8 +6261,10 @@ var scmSpine = (function () {
         //this.context.resetTransform();
         this.context.setTransform(1, 0, 0, 1, 0, 0);
         this.context.scale(1 / scale, 1 / scale);
-        this.context.translate(-centerX, -centerY);
-        this.context.translate(width / 2 + this.x, height / 2 + this.y);
+        //this.context.translate(-centerX, -centerY);
+        //this.context.translate(width / 2 + this.x, height / 2 + this.y);
+        this.context.translate(0, 0);
+        //console.log("resize : " + centerX + " : " + centerY + " : " + width + " : " + height) ;
     };
     return scmSpine;
 }());
