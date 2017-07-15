@@ -111,7 +111,18 @@ class myStage extends ts2D.Stage {
         let timeScale = 1;
         this.initSpine(fname, me.timeScale);
 
-        this.scmSp.setLoadingCompleteCallBackFunc( function() {  });
+
+        this.scmSp.setLoadingCompleteCallBackFunc( function() { 
+            let a = me.canvas.width;
+            let b = me.canvas.height;            
+            me.scmSp.skeleton.x = a/2;
+            me.scmSp.skeleton.y = b - b/4;
+
+         });
+
+
+
+        
 
 
     }
@@ -169,27 +180,27 @@ class myStage extends ts2D.Stage {
         y = 90;
         x = a/2 + 100;
 
-        this.scene.AddSprite(this.speedBtn0_25X.setFontSize(20).setText("x4").setSize(60,30).setCallBackFunc(function() { 
+        this.scene.AddSprite(this.speedBtn0_25X.setFontSize(20).setText("x4").setBtnUpColor('#9999aa').setSize(60,30).setCallBackFunc(function() { 
             me.timeScale = 0.25;
             if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
         }).setLocation(x,y));
         x = x + 80
-        this.scene.AddSprite(this.speedBtn0_5X.setFontSize(20).setText("x2").setSize(60,30).setCallBackFunc(function() { 
+        this.scene.AddSprite(this.speedBtn0_5X.setFontSize(20).setText("x2").setBtnUpColor('#9999aa').setSize(60,30).setCallBackFunc(function() { 
             me.timeScale = 0.5;
             if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
         }).setLocation(x,y));
         x = x + 80
-        this.scene.AddSprite(this.speedBtn1X.setFontSize(20).setText("x1").setSize(60,30).setCallBackFunc(function() { 
+        this.scene.AddSprite(this.speedBtn1X.setFontSize(20).setText("x1").setBtnUpColor('#9999aa').setSize(60,30).setCallBackFunc(function() { 
             me.timeScale = 1;
             if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
         }).setLocation(x,y));
         x = x + 80
-        this.scene.AddSprite(this.speedBtn2X.setFontSize(20).setText("0.5").setSize(60,30).setCallBackFunc(function() { 
+        this.scene.AddSprite(this.speedBtn2X.setFontSize(20).setText("0.5").setBtnUpColor('#9999aa').setSize(60,30).setCallBackFunc(function() { 
             me.timeScale = 2;
             if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
         }).setLocation(x,y));
         x = x + 80
-        this.scene.AddSprite(this.speedBtn4X.setFontSize(20).setText("0.25").setSize(60,30).setCallBackFunc(function() { 
+        this.scene.AddSprite(this.speedBtn4X.setFontSize(20).setText("0.25").setBtnUpColor('#9999aa').setSize(60,30).setCallBackFunc(function() { 
             me.timeScale = 4;
             if(me.scmSp != null && me.scmSp.traceEntry != null) me.scmSp.traceEntry.timeScale = me.timeScale;
         }).setLocation(x,y));

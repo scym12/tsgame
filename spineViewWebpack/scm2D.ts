@@ -47,6 +47,7 @@ export class Sprite extends SNode {
             
         }
         this.img.src = name.toString();
+        return this;
     }
 
     setLocation(x,y) : Sprite {
@@ -368,11 +369,11 @@ export class scmButton extends Sprite {
     text : string = null;
     width = 0;
     height = 0;
-    font : string = "pt ±¼¸²Ã¼";
+    font : string = "pt êµ´ë¦¼ì²´";
     fontSize : number = 40;
     fontColor : string = "#ff0000";
-    btnUpColor : string = "#0000ff";
-    btnDownColor : string = "#5555ff";
+    btnUpColor : string = "#8888ff";
+    btnDownColor : string = "#4433ff";
 
     constructor(upimg? : string, downimg? : string) {
         super();
@@ -386,6 +387,7 @@ export class scmButton extends Sprite {
     loadImage(name : String) {
         super.loadImage(name);
         this.imgUp = this.img;
+        return this;
     }
 
     setImageD(img : String) {
@@ -399,6 +401,8 @@ export class scmButton extends Sprite {
     getText():string { return this.text; }
     setSize(width , height):scmButton { this.width = width; this.height = height; return this; }
     setCallBackFunc(callBackFunc : () => void) { this.callBackFunc = callBackFunc; return this; }
+    setBtnUpColor(str : string) { this.btnUpColor = str; return this; }
+    setBtnDownColor(str : string) { this.btnDownColor = str; return this; }
 
 
     mouseDown(event: MouseEvent): void {  
