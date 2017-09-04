@@ -36,6 +36,8 @@ window.onload = () => {
     canvas.addEventListener("mousedown", function(event: MouseEvent) { stage.mouseDown(event); }, false);
     canvas.addEventListener("mouseup", function(event: MouseEvent) { stage.mouseUp(event); }, false);
 
+    console.log("window.onload");
+
 };
 
 
@@ -76,9 +78,12 @@ function gameInit() {
 
     }
 
+    console.log("game init");
 }
 
 gameInit();
 
-var scmSp = new scmSpine();
-scmSp.init();
+//var scmSp = new scmSpine();
+//scmSp.init();
+
+

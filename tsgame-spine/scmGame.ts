@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------------------------------------------------------
+ï»¿//---------------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------------
 // main.ts 
 //---------------------------------------------------------------------------------------------------------------------------
@@ -29,6 +29,8 @@ export class scmSpine {
 	state: spine.AnimationState = null;
 	bounds;
 	skeletonRenderer: spine.canvas.SkeletonRenderer = null;
+    x : number = 0;
+    y : number = 0;
 
 	// Attack Crouch Fall Headturn Idle Jump Run Walk 
 	//skelName: string  = "hero-mesh";
@@ -36,9 +38,14 @@ export class scmSpine {
 	animName: string  = "Idle";
 	skinName: string  = "default";
 
+    animArr: { [keycode: string]: string; } = {};
+    skinArr: { [keycode: string]: string; } = {};
+
 	eventListener:scmAnimationStateListener = null;
 
-	init () {
+	init (skelName:string) {
+        this.skelName = skelName; 
+
 		this.eventListener = new scmAnimationStateListener();
 
 		this.canvas = <HTMLCanvasElement>document.getElementById("canvas");
@@ -63,6 +70,10 @@ export class scmSpine {
 
 		var me = this;
 		// requestAnimationFrame(function() { me.load(); } );
+
+        this.animArr = {};
+        this.skinArr = {};
+        
         console.log("scmSpine init");
 	}
 
@@ -92,6 +103,10 @@ export class scmSpine {
 
 	loadSkeleton (name, initialAnimation, skin) {
         console.log("loadSkeleton");
+
+        this.animArr = {};
+        this.skinArr = {};
+
 		var me = this;
 		if (skin === undefined) skin = "default";
 
@@ -110,6 +125,27 @@ export class scmSpine {
 		// Set the scale to apply during parsing, parse the file, and create a new skeleton.
 		var skeletonData:spine.SkeletonData = skeletonJson.readSkeletonData(me.assetManager.get("assets/" + name + ".json"));
 		var skeleton:spine.Skeleton = new spine.Skeleton(skeletonData);
+
+        var defaultAni:string = null;
+        for(let key in skeletonData.animations) 
+        {
+            let name = skeletonData.animations[key].name;
+            if(defaultAni == null) defaultAni = name; 
+            this.animArr[name] = name;
+        }
+
+        var defaultSkin:string = null;
+        for(let key in skeletonData.skins) {
+            let name = skeletonData.skins[key].name;
+            if(defaultSkin == null) defaultSkin = name; 
+            this.skinArr[name] = name;
+        }
+
+        if(this.animArr[initialAnimation] == null)
+            initialAnimation = this.animArr[defaultAni];
+        if(this.skinArr[skin] == null)
+            skin = this.skinArr[defaultSkin];
+
 		skeleton.flipY = true;
 		var bounds = me.calculateBounds(skeleton);
 		skeleton.setSkinByName(skin);
@@ -150,19 +186,22 @@ export class scmSpine {
 //		this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
 		this.context.restore();
 
+
+		this.context.strokeStyle = "green";
+		this.context.beginPath();
+		this.context.moveTo(-1000, 0);
+		this.context.lineTo(1000, 0);
+		this.context.moveTo(0, -1000);
+		this.context.lineTo(0, 1000);
+		this.context.stroke();
+
 		this.state.update(delta);
 		this.state.apply(this.skeleton);
 		this.skeleton.updateWorldTransform();
 		this.skeleton.flipX=true;
 		this.skeletonRenderer.draw(this.skeleton);
 
-//		this.context.strokeStyle = "green";
-//		this.context.beginPath();
-//		this.context.moveTo(-1000, 0);
-//		this.context.lineTo(1000, 0);
-//		this.context.moveTo(0, -1000);
-//		this.context.lineTo(0, 1000);
-//		this.context.stroke();
+
 
 		//var me = this;
 		//requestAnimationFrame( function() { me.render(); } );
@@ -194,7 +233,7 @@ export class scmSpine {
 
 		this.context.scale(1 / scale, 1 / scale);
 		this.context.translate(-centerX, -centerY);
-		this.context.translate(width / 2, height / 2);
+		this.context.translate(width / 2 + this.x, height / 2 + this.y);
 	}
 }
 
@@ -220,11 +259,16 @@ export class SNode {
     unique : Number;
     pivot : Point;
 
-    tag : Number;
+    tag : Number;   // User Define value 
+    tagBool : boolean; // User Define Value
+
+    visible : boolean = true;
 
     constructor() {
         this.loc = new Point();
         this.pivot = new Point();
+
+        this.tagBool = true;
     }
 
     getX() { return this.loc.nx + this.pivot.nx; }
@@ -261,6 +305,7 @@ export class Sprite extends SNode {
     }
 
     OnUpdate(ctx :CanvasRenderingContext2D,tm) : void {
+        if(this.visible == false) return;
        // console.log("sprite onupdate" + ctx)
         if(ctx && this.img) {
             let x = this.getX() + (this.parent && this.parent.node.getX() || 0);
@@ -270,12 +315,14 @@ export class Sprite extends SNode {
     }
 
     mouseDown(event: MouseEvent): void {       
+        if(this.visible == false) return;
         var x: number = event.x;
         var y: number = event.y;
 
         console.log("Sprite down : " + x + ":" + y);            
     }    
     mouseUp(event: MouseEvent): void {       
+        if(this.visible == false) return;
         var x: number = event.x;
         var y: number = event.y;
 
@@ -294,13 +341,17 @@ export class Stage {
     scmSp : scmSpine = null;
     private mNum  = 0;
 
+    callBackFunc : () => void = null;
+    setCallBackTimeFunc(callBackFunc : () => void) { this.callBackFunc = callBackFunc; }
+
+
     constructor() {
         this.OnUpdate(0);
     }
 
-    initSpine() {
+    initSpine(skName : string) {
         this.scmSp = new scmSpine();
-        this.scmSp.init();
+        this.scmSp.init(skName);
     }
 
     setCanvas(canvas: HTMLCanvasElement) {
@@ -309,16 +360,17 @@ export class Stage {
     }
 
     public mScene: { [keycode: number]: Scene; } = {};
+    
 
     AddScene(scene:Scene) {
         this.mNum = this.mNum + 1;
         scene.setNumber(this.mNum);
         this.mScene[this.mNum] = scene;
-        scene.setParent(this);
+        scene.setParent(this,this.mNum);
     }
 
-    RemoveScene() {
-        
+    RemoveScene(num:number) {
+        this.mScene[num] = null;
     }
 
 
@@ -339,7 +391,9 @@ export class Stage {
 
 
     OnUpdate = function OnUpdate(tm) {
-        
+        if(this.callBackFunc != null)
+            this.callBackFunc();
+
         //console.log("stage onupdate  " + tm + " " + typeof(tm));
         if(this.canvas) {            
             
@@ -351,17 +405,19 @@ export class Stage {
             this.ctx.scale(1,1);
             this.ctx.save();
             this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-            this.ctx.fillStyle = "black";
-            this.ctx.fillRect(0, 0, 1280, 720);
+//            this.ctx.fillStyle = "black";
+//            this.ctx.fillRect(0, 0, 1280, 720);
+            this.ctx.fillStyle = "#cccccc";
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);            
             this.ctx.restore();
             
             if(this.scmSp != null)
                 this.scmSp.OnUpdate();
 
-
             for (var key in this.mScene) {           
                 var scene: Scene = this.mScene[key];
-                scene.OnUpdate(this.ctx,tm);
+                if(scene)
+                    scene.OnUpdate(this.ctx,tm);
             }
 
             var av = this;
@@ -375,8 +431,9 @@ export class Stage {
 
 
 export class Scene {
-    parent : Stage = null; 
-    setParent(p : Stage) { this.parent = p; }
+    parent : Stage = null;
+    mySceneNum:number = 0; 
+    setParent(p : Stage, num : number) { this.parent = p; this.mySceneNum = num; }
 
     node : SNode;
 
@@ -402,6 +459,17 @@ export class Scene {
         this.mSprite[num] = null; 
     }
 
+    RemoveAllSprite() {
+        this.mSprite = {};
+    }
+
+    GetChildCount(): number  {
+        let cnt = 0;
+        for (var key in this.mSprite) {           
+            cnt = cnt + 1;
+        }
+        return cnt;
+    }
 
 
     OnUpdate(ctx : CanvasRenderingContext2D, tm) : void {
@@ -437,7 +505,8 @@ export class scmButton extends Sprite {
     text : string = null;
     width = 0;
     height = 0;
-    font : string = "40pt ±¼¸²Ã¼";
+    font : string = "pt êµ´ë¦¼ì²´";
+    fontSize : number = 40;
     fontColor : string = "#ff0000";
     btnUpColor : string = "#0000ff";
     btnDownColor : string = "#5555ff";
@@ -447,12 +516,15 @@ export class scmButton extends Sprite {
         this.imgUp = this.img;
     }
 
+    setFontSize(sz): scmButton { this.fontSize = sz; return this; }
     setText(text : string):scmButton {  this.text = text; return this; }
+    getText():string { return this.text; }
     setSize(width , height):scmButton { this.width = width; this.height = height; return this; }
     setCallBackFunc(callBackFunc : () => void) { this.callBackFunc = callBackFunc; return this; }
 
 
     mouseDown(event: MouseEvent): void {  
+        if(this.visible == false) return;
         let width = 0;
         let height = 0;
         if(this.text && this.text.length > 0) {
@@ -474,6 +546,7 @@ export class scmButton extends Sprite {
     }
 
     mouseUp(event: MouseEvent): void { 
+        if(this.visible == false) return;
         let width = 0;
         let height = 0;
         if(this.text && this.text.length > 0) {
@@ -502,6 +575,7 @@ export class scmButton extends Sprite {
     }
 
     OnUpdate(ctx :CanvasRenderingContext2D,tm) : void {
+        if(this.visible == false) return;
         if(this.text && this.text.length > 0)
         {
             ctx.scale(1,1);
@@ -524,10 +598,10 @@ export class scmButton extends Sprite {
             let y = this.height / 2;
             
 
-            ctx.font = this.font;
+            ctx.font = this.fontSize + this.font;
             ctx.fillStyle = this.fontColor;
             ctx.textAlign = "center";
-            ctx.fillText(this.text, this.getX() + x + dx,this.getY() + y + 20 + dy,this.width);
+            ctx.fillText(this.text, this.getX() + x + dx,this.getY() + y + (this.fontSize/2) + dy,this.width);
 
             ctx.font = font;
             ctx.fillStyle = fStyle;   
@@ -541,6 +615,7 @@ export class scmButton extends Sprite {
     }    
 
     OnClick() {
+        if(this.visible == false) return;
         if(this.callBackFunc != null) 
             this.callBackFunc();
         //console.log("Good" + this.unique);
@@ -569,12 +644,8 @@ export class scmButton extends Sprite {
 //---------------------------------------------------------------------------------------------------------------------------
 
 
-
-
-
-
-
 class GameManager {
+    fileList : string[];
 
     setCharState(state) {
     }
@@ -591,9 +662,159 @@ class GameManager {
 
 }
 
+class myStage extends Stage {
+    scene:Scene ;
+    sceneBtn:Scene ;
 
-var stage: Stage = new Stage(); 
+    debugRenderingBtn:scmButton = new scmButton();
+    triangleRenderingBtn:scmButton = new scmButton();
+
+    InitData() {
+        this.scene = new Scene();
+        this.AddScene(this.scene);
+        this.sceneBtn = new Scene();
+        this.AddScene(this.sceneBtn);
+    }
+
+    InitAnimationButton() {
+        if(this.sceneBtn.GetChildCount() > 0 || this.scmSp == null)
+            return;
+
+        let a = this.canvas.width;
+        let b = this.canvas.height;
+  
+        var x = a - 300;
+        var y = 10;
+        var me = this;
+
+        for(var key in this.scmSp.animArr) {
+            let btn:scmButton = new scmButton();
+            this.sceneBtn.AddSprite(btn.setFontSize(20).setText(key).setSize(200,30).setCallBackFunc(
+                function() { 
+                    let str = key;
+                    stage.scmSp.state.setAnimation(0,btn.getText(),true);  
+                }).setLocation(x,y));
+            y = y + 60;
+        }
+
+        y = 10;
+        x = x - 250;
+        for(var key in this.scmSp.skinArr) {
+            let btn:scmButton = new scmButton();
+            this.sceneBtn.AddSprite(btn.setFontSize(20).setText(key).setSize(200,30).setCallBackFunc(
+                function() { 
+                    let str = key;
+                    stage.scmSp.skeleton.setSkinByName(btn.getText());
+                }).setLocation(x,y));
+            y = y + 60;
+            
+        }
+    }
+
+    UpdateRenderButton() {
+        var me = this;
+        if(me.scmSp == null) return;
+        if(me.scmSp.skeletonRenderer.debugRendering != me.debugRenderingBtn.tagBool )
+            me.scmSp.skeletonRenderer.debugRendering = me.debugRenderingBtn.tagBool;
+        me.debugRenderingBtn.setText("debugRendering : " + me.scmSp.skeletonRenderer.debugRendering);
+
+        if(me.scmSp.skeletonRenderer.triangleRendering != me.triangleRenderingBtn.tagBool)
+            me.scmSp.skeletonRenderer.triangleRendering = me.triangleRenderingBtn.tagBool;
+
+        me.triangleRenderingBtn.setText("triangleRendering : " + me.scmSp.skeletonRenderer.triangleRendering);
+    }
+
+    initSpineEx(fname:string) {
+        this.sceneBtn.RemoveAllSprite();
+        //this.RemoveScene(this.sceneBtn.mySceneNum);
+        //this.sceneBtn = new Scene();
+        //this.AddScene(this.sceneBtn);
+
+        this.initSpine(fname);
+    }
+
+    LoadSpineFileList() {
+        this.scene.RemoveAllSprite();
+ 
+        let x = 10;
+        let y = 10;
+        for (var key in manager.fileList) {   
+            if(manager.fileList[key] && manager.fileList[key].length > 1)  
+            {
+                let sz = manager.fileList[key].length;
+                let fname = manager.fileList[key].substr(0,sz-6);
+                //console.log("FileList1 : [" + manager.fileList[key]+ "]");
+                //console.log("FileList2 : " + manager.fileList[key].substr(0,sz-6));
+                var me = this;
+                this.scene.AddSprite((new scmButton()).setFontSize(20).setText(fname).setSize(200,30).setCallBackFunc(function() { me.initSpineEx(fname); }).setLocation(x,y));
+                y = y + 40;
+
+            }
+        }
+        
+
+        /////////////////////////////////////////////////////////////////////////////////
+        // ETC Button 
+        /////////////////////////////////////////////////////////////////////////////////
+
+        let a = this.canvas.width - 400;
+        y = 10;
+        var me = this;
+
+        //var debugRenderingBtn:scmButton = new scmButton();
+        //var triangleRenderingBtn:scmButton = new scmButton();
+
+        this.scene.AddSprite(this.debugRenderingBtn.setFontSize(20).setText("debugRendering : off").setSize(300,30).setCallBackFunc(function() { 
+            if(me.scmSp == null) return;
+            if(me.debugRenderingBtn.tagBool == true)
+                me.debugRenderingBtn.tagBool = false;
+            else
+                me.debugRenderingBtn.tagBool = true;
+        }).setLocation(a/2+150,y));
+
+        y = y + 35;
+        this.scene.AddSprite(this.triangleRenderingBtn.setFontSize(20).setText("triangleRendering : off").setSize(300,30).setCallBackFunc(function() { 
+            if(me.scmSp == null) return;
+            if(me.triangleRenderingBtn.tagBool == true)
+                me.triangleRenderingBtn.tagBool = false;
+            else
+                me.triangleRenderingBtn.tagBool = true;
+        }).setLocation(a/2+150,y));
+        
+        this.UpdateRenderButton();
+    }
+
+    LoadSpine(fname : string) : void {
+
+
+    }
+
+    OnUpdateEx() : void {
+        this.UpdateRenderButton();
+        if(manager.fileList != null)
+        {
+            this.LoadSpineFileList();
+            manager.fileList = null;
+        }
+
+        if(this.scmSp && this.scmSp.animArr != null) {
+            this.InitAnimationButton();
+        }
+
+        if(this.scmSp)
+        {
+
+        }
+    }
+
+}
+
+
+var stage: myStage = new myStage(); 
 var manager:GameManager = new GameManager();
+
+stage.setCallBackTimeFunc( function() { stage.OnUpdateEx(); } );
+
 
 window.onload = () => {
     var canvas: HTMLCanvasElement;
@@ -610,22 +831,26 @@ window.onload = () => {
 
 
 function gameInit() {
+    stage.InitData();
+
+    /*
     var scene = new Scene();
     stage.AddScene(scene);
     var x = 700;
+    var y = 110;
     {
         let btn2 = new scmButton();
         btn2.setText("Idle");
         btn2.setSize(200, 50);
         scene.AddSprite(btn2);
-        btn2.setLocation(x,110);
+        btn2.setLocation(x,y);
         btn2.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Idle",true); }  ;
 
         let btn3 = new scmButton();
         btn3.setText("Walk");
         btn3.setSize(200, 50);
         scene.AddSprite(btn3);
-        btn3.setLocation(x,170);
+        btn3.setLocation(x,y+60);
         btn3.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Walk",true); }  ;
     }
 
@@ -634,21 +859,72 @@ function gameInit() {
         btn.setText("Attack");
         btn.setSize(200, 50);
         scene.AddSprite(btn);
-        btn.setLocation(x,230);
+        btn.setLocation(x,y+120);
         btn.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Attack",false); }  ;
 
     }
 
-    {
-        scene.AddSprite((new scmButton()).setText("Run").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Run",true);    }).setLocation(x,290));
-    }
+    scene.AddSprite((new scmButton()).setText("Run").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Run",true);    }).setLocation(x,y+180));
+    scene.AddSprite((new scmButton()).setText("Crouch").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Crouch",true);    }).setLocation(x,y+240));
+    scene.AddSprite((new scmButton()).setText("Jump").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Jump",true);    }).setLocation(x,y+300));
 
     console.log("game init");
-
-    stage.initSpine();
+    */
+    // stage.initSpine();
 }
 
  gameInit();
+
+
+
+
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+function readTextFile(file)
+{
+    var rawFile = new XMLHttpRequest();
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function ()
+    {
+        if(rawFile.readyState === 4)
+        {
+            if(rawFile.status === 200 || rawFile.status == 0)
+            {
+                var allText = rawFile.responseText;
+                var allText2 = rawFile.response;
+                var ret : string[] = allText.split("\n");
+                //console.log(allText);
+                //console.log(allText2);
+                manager.fileList = ret ;
+            }
+        }
+    }
+    rawFile.send(null);
+}
+
+readTextFile("list.txt");
+
+//----------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 
 

@@ -42,14 +42,19 @@ var scmSpine = (function () {
         this.skeleton = null;
         this.state = null;
         this.skeletonRenderer = null;
+        this.x = 0;
+        this.y = 0;
         // Attack Crouch Fall Headturn Idle Jump Run Walk 
         //skelName: string  = "hero-mesh";
         this.skelName = "hero";
         this.animName = "Idle";
         this.skinName = "default";
+        this.animArr = {};
+        this.skinArr = {};
         this.eventListener = null;
     }
-    scmSpine.prototype.init = function () {
+    scmSpine.prototype.init = function (skelName) {
+        this.skelName = skelName;
         this.eventListener = new scmAnimationStateListener();
         this.canvas = document.getElementById("canvas");
         this.canvas.width = window.innerWidth;
@@ -68,6 +73,8 @@ var scmSpine = (function () {
         this.assetManager.loadTexture("assets/" + this.skelName + ".png");
         var me = this;
         // requestAnimationFrame(function() { me.load(); } );
+        this.animArr = {};
+        this.skinArr = {};
         console.log("scmSpine init");
     };
     scmSpine.prototype.OnUpdate = function (ctx, tm) {
@@ -93,6 +100,8 @@ var scmSpine = (function () {
     };
     scmSpine.prototype.loadSkeleton = function (name, initialAnimation, skin) {
         console.log("loadSkeleton");
+        this.animArr = {};
+        this.skinArr = {};
         var me = this;
         if (skin === undefined)
             skin = "default";
@@ -108,6 +117,24 @@ var scmSpine = (function () {
         // Set the scale to apply during parsing, parse the file, and create a new skeleton.
         var skeletonData = skeletonJson.readSkeletonData(me.assetManager.get("assets/" + name + ".json"));
         var skeleton = new spine.Skeleton(skeletonData);
+        var defaultAni = null;
+        for (var key in skeletonData.animations) {
+            var name_1 = skeletonData.animations[key].name;
+            if (defaultAni == null)
+                defaultAni = name_1;
+            this.animArr[name_1] = name_1;
+        }
+        var defaultSkin = null;
+        for (var key in skeletonData.skins) {
+            var name_2 = skeletonData.skins[key].name;
+            if (defaultSkin == null)
+                defaultSkin = name_2;
+            this.skinArr[name_2] = name_2;
+        }
+        if (this.animArr[initialAnimation] == null)
+            initialAnimation = this.animArr[defaultAni];
+        if (this.skinArr[skin] == null)
+            skin = this.skinArr[defaultSkin];
         skeleton.flipY = true;
         var bounds = me.calculateBounds(skeleton);
         skeleton.setSkinByName(skin);
@@ -139,18 +166,18 @@ var scmSpine = (function () {
         //		this.context.fillStyle = "#cccccc";
         //		this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
         this.context.restore();
+        this.context.strokeStyle = "green";
+        this.context.beginPath();
+        this.context.moveTo(-1000, 0);
+        this.context.lineTo(1000, 0);
+        this.context.moveTo(0, -1000);
+        this.context.lineTo(0, 1000);
+        this.context.stroke();
         this.state.update(delta);
         this.state.apply(this.skeleton);
         this.skeleton.updateWorldTransform();
         this.skeleton.flipX = true;
         this.skeletonRenderer.draw(this.skeleton);
-        //		this.context.strokeStyle = "green";
-        //		this.context.beginPath();
-        //		this.context.moveTo(-1000, 0);
-        //		this.context.lineTo(1000, 0);
-        //		this.context.moveTo(0, -1000);
-        //		this.context.lineTo(0, 1000);
-        //		this.context.stroke();
         //var me = this;
         //requestAnimationFrame( function() { me.render(); } );
     };
@@ -176,7 +203,7 @@ var scmSpine = (function () {
         this.context.setTransform(1, 0, 0, 1, 0, 0);
         this.context.scale(1 / scale, 1 / scale);
         this.context.translate(-centerX, -centerY);
-        this.context.translate(width / 2, height / 2);
+        this.context.translate(width / 2 + this.x, height / 2 + this.y);
     };
     return scmSpine;
 }());
@@ -196,8 +223,10 @@ var Point = (function () {
 exports.Point = Point;
 var SNode = (function () {
     function SNode() {
+        this.visible = true;
         this.loc = new Point();
         this.pivot = new Point();
+        this.tagBool = true;
     }
     SNode.prototype.getX = function () { return this.loc.nx + this.pivot.nx; };
     SNode.prototype.getY = function () { return this.loc.ny + this.pivot.ny; };
@@ -230,6 +259,8 @@ var Sprite = (function (_super) {
         return this;
     };
     Sprite.prototype.OnUpdate = function (ctx, tm) {
+        if (this.visible == false)
+            return;
         // console.log("sprite onupdate" + ctx)
         if (ctx && this.img) {
             var x = this.getX() + (this.parent && this.parent.node.getX() || 0);
@@ -238,11 +269,15 @@ var Sprite = (function (_super) {
         }
     };
     Sprite.prototype.mouseDown = function (event) {
+        if (this.visible == false)
+            return;
         var x = event.x;
         var y = event.y;
         console.log("Sprite down : " + x + ":" + y);
     };
     Sprite.prototype.mouseUp = function (event) {
+        if (this.visible == false)
+            return;
         var x = event.x;
         var y = event.y;
         console.log("Sprite Up : " + x + ":" + y);
@@ -255,9 +290,12 @@ var Stage = (function () {
     function Stage() {
         this.scmSp = null;
         this.mNum = 0;
+        this.callBackFunc = null;
         this.mScene = {};
         /////////////////////////////////////////////////////
         this.OnUpdate = function OnUpdate(tm) {
+            if (this.callBackFunc != null)
+                this.callBackFunc();
             //console.log("stage onupdate  " + tm + " " + typeof(tm));
             if (this.canvas) {
                 var a = this.canvas.width;
@@ -267,14 +305,17 @@ var Stage = (function () {
                 this.ctx.scale(1, 1);
                 this.ctx.save();
                 this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-                this.ctx.fillStyle = "black";
-                this.ctx.fillRect(0, 0, 1280, 720);
+                //            this.ctx.fillStyle = "black";
+                //            this.ctx.fillRect(0, 0, 1280, 720);
+                this.ctx.fillStyle = "#cccccc";
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 this.ctx.restore();
                 if (this.scmSp != null)
                     this.scmSp.OnUpdate();
                 for (var key in this.mScene) {
                     var scene = this.mScene[key];
-                    scene.OnUpdate(this.ctx, tm);
+                    if (scene)
+                        scene.OnUpdate(this.ctx, tm);
                 }
                 var av = this;
                 requestAnimationFrame(function (tm) { av.OnUpdate(tm); });
@@ -282,9 +323,10 @@ var Stage = (function () {
         };
         this.OnUpdate(0);
     }
-    Stage.prototype.initSpine = function () {
+    Stage.prototype.setCallBackTimeFunc = function (callBackFunc) { this.callBackFunc = callBackFunc; };
+    Stage.prototype.initSpine = function (skName) {
         this.scmSp = new scmSpine();
-        this.scmSp.init();
+        this.scmSp.init(skName);
     };
     Stage.prototype.setCanvas = function (canvas) {
         this.canvas = canvas;
@@ -294,9 +336,10 @@ var Stage = (function () {
         this.mNum = this.mNum + 1;
         scene.setNumber(this.mNum);
         this.mScene[this.mNum] = scene;
-        scene.setParent(this);
+        scene.setParent(this, this.mNum);
     };
-    Stage.prototype.RemoveScene = function () {
+    Stage.prototype.RemoveScene = function (num) {
+        this.mScene[num] = null;
     };
     /////////// Mouse Event ////////////////////////////
     Stage.prototype.mouseDown = function (event) {
@@ -315,11 +358,12 @@ exports.Stage = Stage;
 var Scene = (function () {
     function Scene() {
         this.parent = null;
+        this.mySceneNum = 0;
         this.mSprite = {};
         this.mNum = 0;
         this.node = new SNode();
     }
-    Scene.prototype.setParent = function (p) { this.parent = p; };
+    Scene.prototype.setParent = function (p, num) { this.parent = p; this.mySceneNum = num; };
     Scene.prototype.setNumber = function (num) {
         this.node.setNumber(num);
     };
@@ -331,6 +375,16 @@ var Scene = (function () {
     };
     Scene.prototype.RemoveSprite = function (num) {
         this.mSprite[num] = null;
+    };
+    Scene.prototype.RemoveAllSprite = function () {
+        this.mSprite = {};
+    };
+    Scene.prototype.GetChildCount = function () {
+        var cnt = 0;
+        for (var key in this.mSprite) {
+            cnt = cnt + 1;
+        }
+        return cnt;
     };
     Scene.prototype.OnUpdate = function (ctx, tm) {
         //console.log("scene update"+ ctx);
@@ -362,7 +416,8 @@ var scmButton = (function (_super) {
         _this.text = null;
         _this.width = 0;
         _this.height = 0;
-        _this.font = "40pt ����ü";
+        _this.font = "pt ����ü";
+        _this.fontSize = 40;
         _this.fontColor = "#ff0000";
         _this.btnUpColor = "#0000ff";
         _this.btnDownColor = "#5555ff";
@@ -372,10 +427,14 @@ var scmButton = (function (_super) {
         _super.prototype.loadImage.call(this, name);
         this.imgUp = this.img;
     };
+    scmButton.prototype.setFontSize = function (sz) { this.fontSize = sz; return this; };
     scmButton.prototype.setText = function (text) { this.text = text; return this; };
+    scmButton.prototype.getText = function () { return this.text; };
     scmButton.prototype.setSize = function (width, height) { this.width = width; this.height = height; return this; };
     scmButton.prototype.setCallBackFunc = function (callBackFunc) { this.callBackFunc = callBackFunc; return this; };
     scmButton.prototype.mouseDown = function (event) {
+        if (this.visible == false)
+            return;
         var width = 0;
         var height = 0;
         if (this.text && this.text.length > 0) {
@@ -393,6 +452,8 @@ var scmButton = (function (_super) {
             this.img = this.imgDown;
     };
     scmButton.prototype.mouseUp = function (event) {
+        if (this.visible == false)
+            return;
         var width = 0;
         var height = 0;
         if (this.text && this.text.length > 0) {
@@ -418,6 +479,8 @@ var scmButton = (function (_super) {
         this.imgDown.src = img.toString();
     };
     scmButton.prototype.OnUpdate = function (ctx, tm) {
+        if (this.visible == false)
+            return;
         if (this.text && this.text.length > 0) {
             ctx.scale(1, 1);
             ctx.save();
@@ -435,10 +498,10 @@ var scmButton = (function (_super) {
             ctx.fillRect(this.getX() + dx, this.getY() + dy, this.width, this.height);
             var x = this.width / 2;
             var y = this.height / 2;
-            ctx.font = this.font;
+            ctx.font = this.fontSize + this.font;
             ctx.fillStyle = this.fontColor;
             ctx.textAlign = "center";
-            ctx.fillText(this.text, this.getX() + x + dx, this.getY() + y + 20 + dy, this.width);
+            ctx.fillText(this.text, this.getX() + x + dx, this.getY() + y + (this.fontSize / 2) + dy, this.width);
             ctx.font = font;
             ctx.fillStyle = fStyle;
             ctx.restore();
@@ -447,6 +510,8 @@ var scmButton = (function (_super) {
             _super.prototype.OnUpdate.call(this, ctx, tm);
     };
     scmButton.prototype.OnClick = function () {
+        if (this.visible == false)
+            return;
         if (this.callBackFunc != null)
             this.callBackFunc();
         //console.log("Good" + this.unique);
@@ -487,8 +552,138 @@ var GameManager = (function () {
     };
     return GameManager;
 }());
-var stage = new Stage();
+var myStage = (function (_super) {
+    __extends(myStage, _super);
+    function myStage() {
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this.debugRenderingBtn = new scmButton();
+        _this.triangleRenderingBtn = new scmButton();
+        return _this;
+    }
+    myStage.prototype.InitData = function () {
+        this.scene = new Scene();
+        this.AddScene(this.scene);
+        this.sceneBtn = new Scene();
+        this.AddScene(this.sceneBtn);
+    };
+    myStage.prototype.InitAnimationButton = function () {
+        if (this.sceneBtn.GetChildCount() > 0 || this.scmSp == null)
+            return;
+        var a = this.canvas.width;
+        var b = this.canvas.height;
+        var x = a - 300;
+        var y = 10;
+        var me = this;
+        var _loop_1 = function () {
+            var btn = new scmButton();
+            this_1.sceneBtn.AddSprite(btn.setFontSize(20).setText(key).setSize(200, 30).setCallBackFunc(function () {
+                var str = key;
+                stage.scmSp.state.setAnimation(0, btn.getText(), true);
+            }).setLocation(x, y));
+            y = y + 60;
+        };
+        var this_1 = this;
+        for (var key in this.scmSp.animArr) {
+            _loop_1();
+        }
+        y = 10;
+        x = x - 250;
+        var _loop_2 = function () {
+            var btn = new scmButton();
+            this_2.sceneBtn.AddSprite(btn.setFontSize(20).setText(key).setSize(200, 30).setCallBackFunc(function () {
+                var str = key;
+                stage.scmSp.skeleton.setSkinByName(btn.getText());
+            }).setLocation(x, y));
+            y = y + 60;
+        };
+        var this_2 = this;
+        for (var key in this.scmSp.skinArr) {
+            _loop_2();
+        }
+    };
+    myStage.prototype.UpdateRenderButton = function () {
+        var me = this;
+        if (me.scmSp == null)
+            return;
+        if (me.scmSp.skeletonRenderer.debugRendering != me.debugRenderingBtn.tagBool)
+            me.scmSp.skeletonRenderer.debugRendering = me.debugRenderingBtn.tagBool;
+        me.debugRenderingBtn.setText("debugRendering : " + me.scmSp.skeletonRenderer.debugRendering);
+        if (me.scmSp.skeletonRenderer.triangleRendering != me.triangleRenderingBtn.tagBool)
+            me.scmSp.skeletonRenderer.triangleRendering = me.triangleRenderingBtn.tagBool;
+        me.triangleRenderingBtn.setText("triangleRendering : " + me.scmSp.skeletonRenderer.triangleRendering);
+    };
+    myStage.prototype.initSpineEx = function (fname) {
+        this.sceneBtn.RemoveAllSprite();
+        //this.RemoveScene(this.sceneBtn.mySceneNum);
+        //this.sceneBtn = new Scene();
+        //this.AddScene(this.sceneBtn);
+        this.initSpine(fname);
+    };
+    myStage.prototype.LoadSpineFileList = function () {
+        this.scene.RemoveAllSprite();
+        var x = 10;
+        var y = 10;
+        var _loop_3 = function () {
+            if (manager.fileList[key] && manager.fileList[key].length > 1) {
+                var sz = manager.fileList[key].length;
+                var fname_1 = manager.fileList[key].substr(0, sz - 6);
+                //console.log("FileList1 : [" + manager.fileList[key]+ "]");
+                //console.log("FileList2 : " + manager.fileList[key].substr(0,sz-6));
+                me = this_3;
+                this_3.scene.AddSprite((new scmButton()).setFontSize(20).setText(fname_1).setSize(200, 30).setCallBackFunc(function () { me.initSpineEx(fname_1); }).setLocation(x, y));
+                y = y + 40;
+            }
+        };
+        var this_3 = this, me;
+        for (var key in manager.fileList) {
+            _loop_3();
+        }
+        /////////////////////////////////////////////////////////////////////////////////
+        // ETC Button 
+        /////////////////////////////////////////////////////////////////////////////////
+        var a = this.canvas.width - 400;
+        y = 10;
+        var me = this;
+        //var debugRenderingBtn:scmButton = new scmButton();
+        //var triangleRenderingBtn:scmButton = new scmButton();
+        this.scene.AddSprite(this.debugRenderingBtn.setFontSize(20).setText("debugRendering : off").setSize(300, 30).setCallBackFunc(function () {
+            if (me.scmSp == null)
+                return;
+            if (me.debugRenderingBtn.tagBool == true)
+                me.debugRenderingBtn.tagBool = false;
+            else
+                me.debugRenderingBtn.tagBool = true;
+        }).setLocation(a / 2 + 150, y));
+        y = y + 35;
+        this.scene.AddSprite(this.triangleRenderingBtn.setFontSize(20).setText("triangleRendering : off").setSize(300, 30).setCallBackFunc(function () {
+            if (me.scmSp == null)
+                return;
+            if (me.triangleRenderingBtn.tagBool == true)
+                me.triangleRenderingBtn.tagBool = false;
+            else
+                me.triangleRenderingBtn.tagBool = true;
+        }).setLocation(a / 2 + 150, y));
+        this.UpdateRenderButton();
+    };
+    myStage.prototype.LoadSpine = function (fname) {
+    };
+    myStage.prototype.OnUpdateEx = function () {
+        this.UpdateRenderButton();
+        if (manager.fileList != null) {
+            this.LoadSpineFileList();
+            manager.fileList = null;
+        }
+        if (this.scmSp && this.scmSp.animArr != null) {
+            this.InitAnimationButton();
+        }
+        if (this.scmSp) {
+        }
+    };
+    return myStage;
+}(Stage));
+var stage = new myStage();
 var manager = new GameManager();
+stage.setCallBackTimeFunc(function () { stage.OnUpdateEx(); });
 window.onload = function () {
     var canvas;
     canvas = document.getElementById('canvas');
@@ -499,35 +694,78 @@ window.onload = function () {
     console.log("window.onload");
 };
 function gameInit() {
+    stage.InitData();
+    /*
     var scene = new Scene();
     stage.AddScene(scene);
     var x = 700;
+    var y = 110;
     {
-        var btn2 = new scmButton();
+        let btn2 = new scmButton();
         btn2.setText("Idle");
         btn2.setSize(200, 50);
         scene.AddSprite(btn2);
-        btn2.setLocation(x, 110);
-        btn2.callBackFunc = function () { stage.scmSp.state.setAnimation(0, "Idle", true); };
-        var btn3 = new scmButton();
+        btn2.setLocation(x,y);
+        btn2.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Idle",true); }  ;
+
+        let btn3 = new scmButton();
         btn3.setText("Walk");
         btn3.setSize(200, 50);
         scene.AddSprite(btn3);
-        btn3.setLocation(x, 170);
-        btn3.callBackFunc = function () { stage.scmSp.state.setAnimation(0, "Walk", true); };
+        btn3.setLocation(x,y+60);
+        btn3.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Walk",true); }  ;
     }
+
     {
-        var btn = new scmButton();
+        let btn = new scmButton();
         btn.setText("Attack");
         btn.setSize(200, 50);
         scene.AddSprite(btn);
-        btn.setLocation(x, 230);
-        btn.callBackFunc = function () { stage.scmSp.state.setAnimation(0, "Attack", false); };
+        btn.setLocation(x,y+120);
+        btn.callBackFunc = function() { stage.scmSp.state.setAnimation(0,"Attack",false); }  ;
+
     }
-    {
-        scene.AddSprite((new scmButton()).setText("Run").setSize(200, 50).setCallBackFunc(function () { stage.scmSp.state.setAnimation(0, "Run", true); }).setLocation(x, 290));
-    }
+
+    scene.AddSprite((new scmButton()).setText("Run").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Run",true);    }).setLocation(x,y+180));
+    scene.AddSprite((new scmButton()).setText("Crouch").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Crouch",true);    }).setLocation(x,y+240));
+    scene.AddSprite((new scmButton()).setText("Jump").setSize(200,50).setCallBackFunc(function() { stage.scmSp.state.setAnimation(0,"Jump",true);    }).setLocation(x,y+300));
+
     console.log("game init");
-    stage.initSpine();
+    */
+    // stage.initSpine();
 }
 gameInit();
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------------------------
+function readTextFile(file) {
+    var rawFile = new XMLHttpRequest();
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function () {
+        if (rawFile.readyState === 4) {
+            if (rawFile.status === 200 || rawFile.status == 0) {
+                var allText = rawFile.responseText;
+                var allText2 = rawFile.response;
+                var ret = allText.split("\n");
+                //console.log(allText);
+                //console.log(allText2);
+                manager.fileList = ret;
+            }
+        }
+    };
+    rawFile.send(null);
+}
+readTextFile("list.txt");
+//----------------------------------------------------------------------------------------------------------------------------------------------

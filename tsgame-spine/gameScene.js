@@ -1,7 +1,5 @@
 "use strict";
 exports.__esModule = true;
-//import "./main.ts"
-var main_1 = require("./main");
 //import "./scmSprite.ts"
 var scmSprite_1 = require("./scmSprite");
 var GameManager = (function () {
@@ -26,6 +24,7 @@ window.onload = function () {
     stage.OnUpdate(0);
     canvas.addEventListener("mousedown", function (event) { stage.mouseDown(event); }, false);
     canvas.addEventListener("mouseup", function (event) { stage.mouseUp(event); }, false);
+    console.log("window.onload");
 };
 function gameInit() {
     var scene = new scmSprite_1.Scene();
@@ -58,7 +57,8 @@ function gameInit() {
         btn.setLocation(500, 230);
         btn.callBackFunc = function () { };
     }
+    console.log("game init");
 }
 gameInit();
-var scmSp = new main_1.scmSpine();
-scmSp.init();
+//var scmSp = new scmSpine();
+//scmSp.init();

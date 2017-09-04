@@ -141,11 +141,6 @@ var Scene = (function () {
     Scene.prototype.RemoveSprite = function (num) {
         this.mSprite[num] = null;
     };
-    // ���ڴ� ������ �Ǵ°�? �����÷ο��Ǹ�? �ذ�å��? 
-    // Number�� �� ������ �ȵǴ°ǰ�? (���굵 �ȵǴ� ����Ÿ���� ���������� �����ΰ�?)
-    // var a = 10; 
-    // var b : Number = 10;
-    // ���� �������� ? 
     Scene.prototype.OnUpdate = function (ctx, tm) {
         //console.log("scene update"+ ctx);
         for (var key in this.mSprite) {
